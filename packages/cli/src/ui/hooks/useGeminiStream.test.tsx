@@ -195,9 +195,21 @@ describe('useGeminiStream', () => {
       vertexai: false,
       showMemoryUsage: false,
       contextFileName: undefined,
-      getToolRegistry: vi.fn(
-        () => ({ getToolSchemaList: vi.fn(() => []) }) as any,
-      ),
+      getToolRegistry: vi.fn(() => ({
+        getToolSchemaList: vi.fn(() => []),
+        getTool: vi.fn((toolName: string) => {
+          if (toolName === 'query_analyzer') {
+            return {
+              build: vi.fn(() => ({
+                execute: vi
+                  .fn()
+                  .mockResolvedValue({ llmContent: 'mocked query analysis' }),
+              })),
+            };
+          }
+          return undefined;
+        }),
+      })) as any,
       getProjectRoot: vi.fn(() => '/test/dir'),
       getCheckpointingEnabled: vi.fn(() => false),
       getGeminiClient: mockGetGeminiClient,

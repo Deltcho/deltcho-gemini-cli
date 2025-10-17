@@ -17,6 +17,7 @@ import { StringDecoder } from 'node:string_decoder';
 import { connectAndDiscover } from './mcp-client.js';
 import { McpClientManager } from './mcp-client-manager.js';
 import { DiscoveredMCPTool } from './mcp-tool.js';
+import { QueryAnalyzerTool } from './query-analyzer.js';
 import { parse } from 'shell-quote';
 import { ToolErrorType } from './tool-error.js';
 import { safeJsonStringify } from '../utils/safeJsonStringify.js';
@@ -183,6 +184,8 @@ export class ToolRegistry {
       this.config.getWorkspaceContext(),
       eventEmitter,
     );
+
+    this.registerTool(new QueryAnalyzerTool(this.config));
   }
 
   /**

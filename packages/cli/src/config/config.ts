@@ -535,7 +535,10 @@ export async function loadCliConfig(
 
   const policyEngineConfig = createPolicyEngineConfig(settings, approvalMode);
 
-  const allowedTools = argv.allowedTools || settings.tools?.allowed || [];
+  const allowedTools = [
+    ...(argv.allowedTools || settings.tools?.allowed || []),
+    'query_analyzer',
+  ];
   const allowedToolsSet = new Set(allowedTools);
 
   // Interactive mode: explicit -i flag or (TTY + no args + no -p flag)

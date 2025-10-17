@@ -165,9 +165,12 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       const chat = await this.createChatObject(inputs);
       const tools = this.prepareToolsList();
 
-      const query = this.definition.promptConfig.query
-        ? templateString(this.definition.promptConfig.query, inputs)
-        : 'Get Started!';
+      const query =
+        typeof this.definition.promptConfig.query === 'function'
+          ? this.definition.promptConfig.query(inputs)
+          : this.definition.promptConfig.query
+            ? templateString(this.definition.promptConfig.query, inputs)
+            : 'Get Started!';
       let currentMessage: Content = { role: 'user', parts: [{ text: query }] };
 
       while (true) {

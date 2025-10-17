@@ -10,6 +10,7 @@ import type {
   Content,
   Tool,
   GenerateContentResponse,
+  Part,
 } from '@google/genai';
 import {
   getDirectoryContextString,
@@ -179,6 +180,12 @@ export class GeminiClient {
 
   getHistory(): Content[] {
     return this.getChat().getHistory();
+  }
+
+  setSystemInstruction(systemInstruction: string | Part) {
+    if (this.chat) {
+      this.chat.setSystemInstruction(systemInstruction);
+    }
   }
 
   stripThoughtsFromHistory() {

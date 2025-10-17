@@ -7,6 +7,7 @@
 import type { Config } from '../config/config.js';
 import type { AgentDefinition } from './types.js';
 import { CodebaseInvestigatorAgent } from './codebase-investigator.js';
+import { QueryAnalysisAgent } from './query-analyzer-agent.js';
 import { type z } from 'zod';
 
 /**
@@ -60,6 +61,8 @@ export class AgentRegistry {
       };
       this.registerAgent(agentDef);
     }
+
+    this.registerAgent(QueryAnalysisAgent);
   }
 
   /**

@@ -73,6 +73,7 @@ export function resolvePathFromEnv(envVar?: string): {
 export function getCoreSystemPrompt(
   config: Config,
   userMemory?: string,
+  queryAnalysis?: string, // New parameter
 ): string {
   // A flag to indicate whether the system prompt override is active.
   let systemMdEnabled = false;
@@ -283,6 +284,10 @@ Your core function is efficient and safe assistance. Balance extreme conciseness
     userMemory && userMemory.trim().length > 0
       ? `\n\n---\n\n${userMemory.trim()}`
       : '';
+
+  if (queryAnalysis) {
+    return `${basePrompt}${memorySuffix}\n\n# Query Analysis\n\n${queryAnalysis}\n\nBased on this analysis, create a plan to address the user's query.`;
+  }
 
   return `${basePrompt}${memorySuffix}`;
 }

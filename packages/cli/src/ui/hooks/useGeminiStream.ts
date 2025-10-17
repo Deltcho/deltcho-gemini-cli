@@ -35,6 +35,7 @@ import {
   promptIdContext,
   WRITE_FILE_TOOL_NAME,
   tokenLimit,
+  getCoreSystemPrompt,
 } from '@google/gemini-cli-core';
 import { type Part, type PartListUnion, FinishReason } from '@google/genai';
 import type {
@@ -71,7 +72,11 @@ enum StreamProcessingStatus {
   Error,
 }
 
-const EDIT_TOOL_NAMES = new Set(['replace', WRITE_FILE_TOOL_NAME]);
+const EDIT_TOOL_NAMES = new Set([
+  'replace',
+  WRITE_FILE_TOOL_NAME,
+  'parallel-edit',
+]);
 
 function showCitations(settings: LoadedSettings): boolean {
   const enabled = settings?.merged?.ui?.showCitations;
@@ -109,9 +114,13 @@ export const useGeminiStream = (
   isShellFocused?: boolean,
 ) => {
   const [initError, setInitError] = useState<string | null>(null);
+  const [queryAnalysis, setQueryAnalysis] = useState<string | undefined>(
+    undefined,
+  );
   const abortControllerRef = useRef<AbortController | null>(null);
   const turnCancelledRef = useRef(false);
   const [isResponding, setIsResponding] = useState<boolean>(false);
+
   const [thought, setThought] = useState<ThoughtSummary | null>(null);
   const [pendingHistoryItem, pendingHistoryItemRef, setPendingHistoryItem] =
     useStateAndRef<HistoryItemWithoutId | null>(null);
@@ -815,6 +824,51 @@ export const useGeminiStream = (
       if (!prompt_id) {
         prompt_id = config.getSessionId() + '########' + getPromptCount();
       }
+
+      // New: Call query analyzer
+      const queryAnalyzerTool = config
+        .getToolRegistry()
+        .getTool('query_analyzer');
+      if (queryAnalyzerTool) {
+        let queryForAnalyzer: string;
+        if (typeof query === 'string') {
+          queryForAnalyzer = query;
+        } else if (Array.isArray(query)) {
+          queryForAnalyzer = query
+            .map((part) => {
+              if (
+                typeof part === 'object' &&
+                part !== null &&
+                'text' in part &&
+                typeof part.text === 'string'
+              ) {
+                return part.text;
+              }
+              return JSON.stringify(part);
+            })
+            .join(' ');
+        } else {
+          queryForAnalyzer = JSON.stringify(query);
+        }
+        const invocation = queryAnalyzerTool.build({ query: queryForAnalyzer });
+        try {
+          const result = await invocation.execute(abortSignal);
+          const queryAnalysisContent =
+            typeof result.llmContent === 'string'
+              ? result.llmContent
+              : JSON.stringify(result.llmContent);
+          setQueryAnalysis(queryAnalysisContent);
+          const systemPrompt = getCoreSystemPrompt(
+            config,
+            undefined,
+            queryAnalysisContent,
+          );
+          geminiClient.setSystemInstruction(systemPrompt);
+        } catch (e) {
+          console.error('Error executing query analyzer', e);
+        }
+      }
+
       return promptIdContext.run(prompt_id, async () => {
         const { queryToSend, shouldProceed } = await prepareQueryForGemini(
           query,
@@ -1207,6 +1261,7 @@ export const useGeminiStream = (
     initError,
     pendingHistoryItems,
     thought,
+    queryAnalysis,
     cancelOngoingRequest,
     pendingToolCalls: toolCalls,
     handleApprovalModeChange,
