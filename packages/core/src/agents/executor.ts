@@ -26,7 +26,11 @@ import { LSTool } from '../tools/ls.js';
 import { MemoryTool } from '../tools/memoryTool.js';
 import { ReadFileTool } from '../tools/read-file.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
-import { GLOB_TOOL_NAME, WEB_SEARCH_TOOL_NAME } from '../tools/tool-names.js';
+import {
+  GLOB_TOOL_NAME,
+  WEB_SEARCH_TOOL_NAME,
+  THINK_TOOL_NAME,
+} from '../tools/tool-names.js';
 import { promptIdContext } from '../utils/promptIdContext.js';
 import { logAgentStart, logAgentFinish } from '../telemetry/loggers.js';
 import { AgentStartEvent, AgentFinishEvent } from '../telemetry/types.js';
@@ -744,6 +748,7 @@ Important Rules:
       ReadManyFilesTool.Name,
       MemoryTool.Name,
       WEB_SEARCH_TOOL_NAME,
+      THINK_TOOL_NAME,
       'query_analyzer',
       'parallel_edit',
     ]);
