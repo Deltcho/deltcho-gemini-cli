@@ -336,12 +336,14 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       : undefined;
 
     try {
+      const thinkingBudget = modelConfig.thinkingBudget ?? -1;
+
       const generationConfig: GenerateContentConfig = {
         temperature: modelConfig.temp,
         topP: modelConfig.top_p,
         thinkingConfig: {
-          includeThoughts: true,
-          thinkingBudget: modelConfig.thinkingBudget ?? -1,
+          includeThoughts: thinkingBudget !== 0,
+          thinkingBudget,
         },
       };
 
@@ -536,27 +538,50 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       };
 
       // Create a promise for the tool execution
-      const executionPromise = (async () => {
-        const { response: toolResponse } = await executeToolCall(
-          this.runtimeContext,
-          requestInfo,
-          signal,
-        );
+      const executionPromise = (async (): Promise<Part[]> => {
+        try {
+          const { response: toolResponse } = await executeToolCall(
+            this.runtimeContext,
+            requestInfo,
+            signal,
+          );
 
-        if (toolResponse.error) {
+          if (toolResponse.error) {
+            this.emitActivity('ERROR', {
+              context: 'tool_call',
+              name: functionCall.name,
+              error: toolResponse.error.message,
+            });
+          } else {
+            this.emitActivity('TOOL_CALL_END', {
+              name: functionCall.name,
+              output: toolResponse.resultDisplay,
+            });
+          }
+
+          // Ensure we return an array of parts, even if it's empty or undefined
+          return toolResponse.responseParts ?? [];
+        } catch (error) {
+          const errorMessage = String(error);
           this.emitActivity('ERROR', {
-            context: 'tool_call',
+            context: 'tool_call_exception',
             name: functionCall.name,
-            error: toolResponse.error.message,
+            error: errorMessage,
           });
-        } else {
-          this.emitActivity('TOOL_CALL_END', {
-            name: functionCall.name,
-            output: toolResponse.resultDisplay,
-          });
-        }
 
-        return toolResponse.responseParts;
+          // Return a single error response part to satisfy the API's requirement
+          return [
+            {
+              functionResponse: {
+                name: functionCall.name as string,
+                id: callId,
+                response: {
+                  error: `Tool execution failed with an exception: ${errorMessage}`,
+                },
+              },
+            },
+          ];
+        }
       })();
 
       toolExecutionPromises.push(executionPromise);
@@ -719,6 +744,8 @@ Important Rules:
       ReadManyFilesTool.Name,
       MemoryTool.Name,
       WEB_SEARCH_TOOL_NAME,
+      'query_analyzer',
+      'parallel_edit',
     ]);
     for (const tool of toolRegistry.getAllTools()) {
       if (!allowlist.has(tool.name)) {

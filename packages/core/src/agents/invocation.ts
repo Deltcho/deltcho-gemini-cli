@@ -78,7 +78,13 @@ export class SubagentInvocation<
   ): Promise<ToolResult> {
     try {
       if (updateOutput) {
-        updateOutput('Subagent starting...\n');
+        if (this.definition.name === 'query_analyzer') {
+          updateOutput(
+            'Analyzing your query and codebase to find relevant files...\n',
+          );
+        } else {
+          updateOutput('Subagent starting...\n');
+        }
       }
 
       // Create an activity callback to bridge the executor's events to the

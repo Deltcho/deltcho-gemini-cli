@@ -48,6 +48,7 @@ export const QueryAnalysisAgent: AgentDefinition<typeof RelevantFilesSchema> = {
     model: 'gemini-2.5-flash',
     temp: 0.2,
     top_p: 1,
+    thinkingBudget: 0,
   },
   runConfig: {
     max_time_minutes: 5,
