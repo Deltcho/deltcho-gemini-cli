@@ -29,8 +29,8 @@ Learn all about Gemini CLI in our [documentation](https://geminicli.com/docs/).
 
 ### WARNING
 
-This is a custom fork with my hacked-in tools. Use at your own peril. It comes with no guarantees and is completely unofficial.
-
+This is a custom fork with my hacked-in tools. Use at your own peril. It comes
+with no guarantees and is completely unofficial.
 
 ### Quick Install
 

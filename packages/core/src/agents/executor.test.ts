@@ -97,7 +97,9 @@ const MockQueryAnalysisAgentDefinition: AgentDefinition<z.ZodUnknown> = {
       throw new Error('QueryAnalysisAgent.processOutput is undefined');
     }
     return QueryAnalysisAgent.processOutput(
-      output as { files: { path: string; lines?: number[] | undefined }[] },
+      output as {
+        files: { path: string; lines?: number[] | undefined; reason: string }[];
+      },
     );
   },
 };

@@ -6,7 +6,7 @@
 
 import type { AgentDefinition, AgentInputs } from './types.js';
 import { ReadFileTool } from '../tools/read-file.js';
-import { GLOB_TOOL_NAME } from '../tools/tool-names.js';
+import { GLOB_TOOL_NAME, THINK_TOOL_NAME } from '../tools/tool-names.js';
 import { GrepTool } from '../tools/grep.js';
 import { z } from 'zod';
 
@@ -16,6 +16,11 @@ const RelevantFilesSchema = z.object({
       z.object({
         path: z.string(),
         lines: z.array(z.number()).optional(),
+        reason: z
+          .string()
+          .describe(
+            "A brief explanation of why this file/lines are relevant to the user's query.",
+          ),
       }),
     )
     .describe("A list of files relevant to the user's query."),
@@ -54,11 +59,11 @@ export const QueryAnalysisAgent: AgentDefinition<typeof RelevantFilesSchema> = {
     max_time_minutes: 5,
   },
   toolConfig: {
-    tools: [ReadFileTool.Name, GLOB_TOOL_NAME, GrepTool.Name],
+    tools: [ReadFileTool.Name, GLOB_TOOL_NAME, GrepTool.Name, THINK_TOOL_NAME],
   },
   promptConfig: {
     query: (inputs: AgentInputs) =>
-      `Analyze the following user query and the provided codebase to identify the most relevant files and lines.\n\nUser Query:\n<query>\n${inputs['query']}\n</query>\n\nYour task is to return a JSON object with a list of relevant files. For each file, include the path and, if possible, a list of relevant line numbers.`,
-    systemPrompt: `You are an AI assistant that specializes in analyzing user queries and codebases to identify relevant files. Your goal is to provide a structured list of files that will help the main AI agent to fulfill the user's request.\n\nYou have access to the following tools to help you:\n- \`read_file\`: Reads the content of a file.\n- \`glob\`: Finds files matching a glob pattern.\n- \`grep\`: Searches for a pattern in files.\n\nUse these tools to explore the codebase and identify the most relevant files and lines for the given user query.`,
+      `Analyze the following user query and the provided codebase to identify the most relevant files and lines.\n\nUser Query:\n<query>\n${inputs['query']}\n</query>\n\nYour task is to return a JSON object with a list of relevant files. For each file, include the path, a list of relevant line numbers, and a brief reason for its relevance.`,
+    systemPrompt: `You are an AI assistant that specializes in analyzing user queries and codebases to identify relevant files. Your goal is to provide a structured list of files that will help the main AI agent to fulfill the user's request. You must also provide a brief explanation of why each file or set of lines is relevant.\n\nYou have access to the following tools to help you:\n- \`read_file\`: Reads the content of a file.\n- \`glob\`: Finds files matching a glob pattern.\n- \`grep\`: Searches for a pattern in files.\n\nUse these tools to explore the codebase and identify the most relevant files and lines for the given user query. When multiple independent tool calls are needed (e.g., reading multiple files or running multiple searches), always execute them in parallel by including all calls in a single response.`,
   },
 };
