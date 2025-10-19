@@ -54,7 +54,7 @@ export class ThinkTool extends BaseDeclarativeTool<
     super(
       ThinkTool.Name,
       'Think',
-      'Use the tool to think about something. It will not obtain new information or change the database, but just append the thought to the log. Use it when complex reasoning or some cache memory is needed.',
+      "This tool allows you to record your thought process. It should be used to articulate a clear plan of action after analyzing the user's query and code base. The thought should outline the steps the model will take to fulfill the user's request. Use the tool to think about something (e.g. user's request or how the code functions). It will not obtain new information or change the database, but just append the thought to the log. Use it when complex reasoning or some cache memory is needed. This tool does not perform any external action or obtain new information; it is purely for logging the model's thought process.",
       Kind.Think,
       {
         properties: {

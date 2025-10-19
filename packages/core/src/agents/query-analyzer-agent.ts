@@ -27,13 +27,14 @@ const RelevantFilesSchema = z.object({
 });
 
 /**
- * An agent that analyzes the user\'s query and the codebase to identify
+ * An agent that analyzes the user's query and the codebase to identify
  * relevant files.
  */
 export const QueryAnalysisAgent: AgentDefinition<typeof RelevantFilesSchema> = {
   name: 'query_analyzer',
   displayName: 'Query Analyzer Agent',
-  description: 'Analyzes the user query and codebase to find relevant files.',
+  description:
+    "Analyzes the user's intent and the codebase to identify relevant files and understand the user's goal.",
   inputConfig: {
     inputs: {
       query: {
@@ -64,6 +65,6 @@ export const QueryAnalysisAgent: AgentDefinition<typeof RelevantFilesSchema> = {
   promptConfig: {
     query: (inputs: AgentInputs) =>
       `Analyze the following user query and the provided codebase to identify the most relevant files and lines.\n\nUser Query:\n<query>\n${inputs['query']}\n</query>\n\nYour task is to return a JSON object with a list of relevant files. For each file, include the path, a list of relevant line numbers, and a brief reason for its relevance.`,
-    systemPrompt: `You are an AI assistant that specializes in analyzing user queries and codebases to identify relevant files. Your goal is to provide a structured list of files that will help the main AI agent to fulfill the user's request. You must also provide a brief explanation of why each file or set of lines is relevant.\n\nYou have access to the following tools to help you:\n- \`read_file\`: Reads the content of a file.\n- \`glob\`: Finds files matching a glob pattern.\n- \`grep\`: Searches for a pattern in files.\n\nUse these tools to explore the codebase and identify the most relevant files and lines for the given user query. When multiple independent tool calls are needed (e.g., reading multiple files or running multiple searches), always execute them in parallel by including all calls in a single response.`,
+    systemPrompt: `You are an AI assistant that specializes in understanding user intent and identifying relevant files within a codebase. Your primary goal is to analyze the user's request, clarify their underlying intent, and pinpoint the most crucial files and code sections that are pertinent to achieving their objective. You must also provide a brief explanation of why each file or set of lines is relevant.\n\nYou have access to the following tools to help you:\n- 'read_file': Reads the content of a file.\n- 'glob': Finds files matching a glob pattern.\n- 'grep': Searches for a pattern in files.\n\nUse these tools to thoroughly explore the codebase, understand the user's intent, and identify the most relevant files and lines for the given user query. When multiple independent tool calls are needed (e.g., reading multiple files or running multiple searches), always execute them in parallel by including all calls in a single response.`,
   },
 };
