@@ -27,65 +27,33 @@ Learn all about Gemini CLI in our [documentation](https://geminicli.com/docs/).
 
 ## 📦 Installation
 
+### WARNING
+
+This is a custom fork with my hacked-in tools. Use at your own peril. It comes
+with no guarantees and is completely unofficial.
+
 ### Quick Install
 
 #### Run instantly with npx
 
 ```bash
 # Using npx (no installation required)
-npx https://github.com/google-gemini/gemini-cli
+npx https://github.com/Deltcho/deltcho-gemini-cli
 ```
 
 #### Install globally with npm
 
-```bash
-npm install -g @google/gemini-cli
-```
-
-#### Install globally with Homebrew (macOS/Linux)
+Navigate to cloned director and...
 
 ```bash
-brew install gemini-cli
+npm run build
+npm install -g .
 ```
 
 #### System Requirements
 
 - Node.js version 20 or higher
 - macOS, Linux, or Windows
-
-## Release Cadence and Tags
-
-See [Releases](./docs/releases.md) for more details.
-
-### Preview
-
-New preview releases will be published each week at UTC 2359 on Tuesdays. These
-releases will not have been fully vetted and may contain regressions or other
-outstanding issues. Please help us test and install with `preview` tag.
-
-```bash
-npm install -g @google/gemini-cli@preview
-```
-
-### Stable
-
-- New stable releases will be published each week at UTC 2000 on Tuesdays, this
-  will be the full promotion of last week's `preview` release + any bug fixes
-  and validations. Use `latest` tag.
-
-```bash
-npm install -g @google/gemini-cli@latest
-```
-
-### Nightly
-
-- New releases will be published each week at UTC 0000 each day, This will be
-  all changes from the main branch as represented at time of release. It should
-  be assumed there are pending validations and issues. Use `nightly` tag.
-
-```bash
-npm install -g @google/gemini-cli@nightly
-```
 
 ## 📋 Key Features
 
@@ -146,7 +114,7 @@ for details)
 #### Start Gemini CLI, then choose _Login with Google_ and follow the browser authentication flow when prompted
 
 ```bash
-gemini
+gemini-deltcho
 ```
 
 #### If you are using a paid Code Assist License from your organization, remember to set the Google Cloud Project
@@ -154,7 +122,7 @@ gemini
 ```bash
 # Set your Google Cloud Project
 export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"
-gemini
+gemini-deltcho
 ```
 
 ### Option 2: Gemini API Key
@@ -200,19 +168,19 @@ For Google Workspace accounts and other authentication methods, see the
 #### Start in current directory
 
 ```bash
-gemini
+gemini-deltcho
 ```
 
 #### Include multiple directories
 
 ```bash
-gemini --include-directories ../lib,../docs
+gemini-deltcho --include-directories ../lib,../docs
 ```
 
 #### Use specific model
 
 ```bash
-gemini -m gemini-2.5-flash
+gemini-deltcho -m gemini-2.5-flash
 ```
 
 #### Non-interactive mode for scripts
@@ -220,21 +188,21 @@ gemini -m gemini-2.5-flash
 Get a simple text response:
 
 ```bash
-gemini -p "Explain the architecture of this codebase"
+gemini-deltcho -p "Explain the architecture of this codebase"
 ```
 
 For more advanced scripting, including how to parse JSON and handle errors, use
 the `--output-format json` flag to get structured output:
 
 ```bash
-gemini -p "Explain the architecture of this codebase" --output-format json
+gemini-deltcho -p "Explain the architecture of this codebase" --output-format json
 ```
 
 For real-time event streaming (useful for monitoring long-running operations),
 use `--output-format stream-json` to get newline-delimited JSON events:
 
 ```bash
-gemini -p "Run tests and deploy" --output-format stream-json
+gemini-deltcho -p "Run tests and deploy" --output-format stream-json
 ```
 
 ### Quick Examples
@@ -243,7 +211,7 @@ gemini -p "Run tests and deploy" --output-format stream-json
 
 ```bash
 cd new-project/
-gemini
+gemini-deltcho
 > Write me a Discord bot that answers questions using a FAQ.md file I will provide
 ```
 
@@ -252,7 +220,7 @@ gemini
 ```bash
 git clone https://github.com/google-gemini/gemini-cli
 cd gemini-cli
-gemini
+gemini-deltcho
 > Give me a summary of all of the changes that went in yesterday
 ```
 

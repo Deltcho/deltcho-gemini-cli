@@ -91,7 +91,7 @@ export interface PromptConfig {
    * and initialMessages (history/few-shots). Supports templating.
    * If not provided, a generic "Get Started!" message is used.
    */
-  query?: string;
+  query?: string | ((inputs: AgentInputs) => string);
 }
 
 /**

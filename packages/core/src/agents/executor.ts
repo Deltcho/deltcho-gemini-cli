@@ -26,7 +26,11 @@ import { LSTool } from '../tools/ls.js';
 import { MemoryTool } from '../tools/memoryTool.js';
 import { ReadFileTool } from '../tools/read-file.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
-import { GLOB_TOOL_NAME, WEB_SEARCH_TOOL_NAME } from '../tools/tool-names.js';
+import {
+  GLOB_TOOL_NAME,
+  WEB_SEARCH_TOOL_NAME,
+  THINK_TOOL_NAME,
+} from '../tools/tool-names.js';
 import { promptIdContext } from '../utils/promptIdContext.js';
 import { logAgentStart, logAgentFinish } from '../telemetry/loggers.js';
 import { AgentStartEvent, AgentFinishEvent } from '../telemetry/types.js';
@@ -165,9 +169,12 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       const chat = await this.createChatObject(inputs);
       const tools = this.prepareToolsList();
 
-      const query = this.definition.promptConfig.query
-        ? templateString(this.definition.promptConfig.query, inputs)
-        : 'Get Started!';
+      const query =
+        typeof this.definition.promptConfig.query === 'function'
+          ? this.definition.promptConfig.query(inputs)
+          : this.definition.promptConfig.query
+            ? templateString(this.definition.promptConfig.query, inputs)
+            : 'Get Started!';
       let currentMessage: Content = { role: 'user', parts: [{ text: query }] };
 
       while (true) {
@@ -333,12 +340,14 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       : undefined;
 
     try {
+      const thinkingBudget = modelConfig.thinkingBudget ?? 0;
+
       const generationConfig: GenerateContentConfig = {
         temperature: modelConfig.temp,
         topP: modelConfig.top_p,
         thinkingConfig: {
-          includeThoughts: true,
-          thinkingBudget: modelConfig.thinkingBudget ?? -1,
+          includeThoughts: thinkingBudget !== 0,
+          thinkingBudget,
         },
       };
 
@@ -533,27 +542,50 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       };
 
       // Create a promise for the tool execution
-      const executionPromise = (async () => {
-        const { response: toolResponse } = await executeToolCall(
-          this.runtimeContext,
-          requestInfo,
-          signal,
-        );
+      const executionPromise = (async (): Promise<Part[]> => {
+        try {
+          const { response: toolResponse } = await executeToolCall(
+            this.runtimeContext,
+            requestInfo,
+            signal,
+          );
 
-        if (toolResponse.error) {
+          if (toolResponse.error) {
+            this.emitActivity('ERROR', {
+              context: 'tool_call',
+              name: functionCall.name,
+              error: toolResponse.error.message,
+            });
+          } else {
+            this.emitActivity('TOOL_CALL_END', {
+              name: functionCall.name,
+              output: toolResponse.resultDisplay,
+            });
+          }
+
+          // Ensure we return an array of parts, even if it's empty or undefined
+          return toolResponse.responseParts ?? [];
+        } catch (error) {
+          const errorMessage = String(error);
           this.emitActivity('ERROR', {
-            context: 'tool_call',
+            context: 'tool_call_exception',
             name: functionCall.name,
-            error: toolResponse.error.message,
+            error: errorMessage,
           });
-        } else {
-          this.emitActivity('TOOL_CALL_END', {
-            name: functionCall.name,
-            output: toolResponse.resultDisplay,
-          });
-        }
 
-        return toolResponse.responseParts;
+          // Return a single error response part to satisfy the API's requirement
+          return [
+            {
+              functionResponse: {
+                name: functionCall.name as string,
+                id: callId,
+                response: {
+                  error: `Tool execution failed with an exception: ${errorMessage}`,
+                },
+              },
+            },
+          ];
+        }
       })();
 
       toolExecutionPromises.push(executionPromise);
@@ -716,6 +748,8 @@ Important Rules:
       ReadManyFilesTool.Name,
       MemoryTool.Name,
       WEB_SEARCH_TOOL_NAME,
+      THINK_TOOL_NAME,
+      'parallel_edit',
     ]);
     for (const tool of toolRegistry.getAllTools()) {
       if (!allowlist.has(tool.name)) {

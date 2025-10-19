@@ -71,7 +71,11 @@ enum StreamProcessingStatus {
   Error,
 }
 
-const EDIT_TOOL_NAMES = new Set(['replace', WRITE_FILE_TOOL_NAME]);
+const EDIT_TOOL_NAMES = new Set([
+  'replace',
+  WRITE_FILE_TOOL_NAME,
+  'parallel-edit',
+]);
 
 function showCitations(settings: LoadedSettings): boolean {
   const enabled = settings?.merged?.ui?.showCitations;
@@ -109,9 +113,11 @@ export const useGeminiStream = (
   isShellFocused?: boolean,
 ) => {
   const [initError, setInitError] = useState<string | null>(null);
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const turnCancelledRef = useRef(false);
   const [isResponding, setIsResponding] = useState<boolean>(false);
+
   const [thought, setThought] = useState<ThoughtSummary | null>(null);
   const [pendingHistoryItem, pendingHistoryItemRef, setPendingHistoryItem] =
     useStateAndRef<HistoryItemWithoutId | null>(null);
@@ -722,6 +728,13 @@ export const useGeminiStream = (
             );
             break;
           case ServerGeminiEventType.ToolCallRequest:
+            if (event.value.name === 'think') {
+              const thoughtText = event.value.args['thought'] as string;
+              setThought({
+                subject: thoughtText.substring(0, 50) + '...',
+                description: thoughtText,
+              });
+            }
             toolCallRequests.push(event.value);
             break;
           case ServerGeminiEventType.UserCancelled:
@@ -817,6 +830,7 @@ export const useGeminiStream = (
       if (!prompt_id) {
         prompt_id = config.getSessionId() + '########' + getPromptCount();
       }
+
       return promptIdContext.run(prompt_id, async () => {
         const { queryToSend, shouldProceed } = await prepareQueryForGemini(
           query,

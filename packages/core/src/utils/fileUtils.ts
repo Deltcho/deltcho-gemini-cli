@@ -430,14 +430,17 @@ export async function processSingleFileContent(
         const selectedLines = lines.slice(actualStartLine, endLine);
 
         let linesWereTruncatedInLength = false;
-        const formattedLines = selectedLines.map((line) => {
+        const formattedLines = selectedLines.map((line, index) => {
+          const lineNumber = actualStartLine + index + 1;
+          const lineNumberPrefix = `[${lineNumber}] `;
+          let processedLine = line;
+
           if (line.length > MAX_LINE_LENGTH_TEXT_FILE) {
             linesWereTruncatedInLength = true;
-            return (
-              line.substring(0, MAX_LINE_LENGTH_TEXT_FILE) + '... [truncated]'
-            );
+            processedLine =
+              line.substring(0, MAX_LINE_LENGTH_TEXT_FILE) + '... [truncated]';
           }
-          return line;
+          return lineNumberPrefix + processedLine;
         });
 
         const contentRangeTruncated =

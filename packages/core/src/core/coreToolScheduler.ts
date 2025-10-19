@@ -176,12 +176,25 @@ export function convertToFunctionResponse(
   }
 
   if (Array.isArray(contentToProcess)) {
+    const parts = toParts(contentToProcess);
+    // Check if the array of parts already contains a functionResponse part.
+    const hasFunctionResponse = parts.some(
+      (part) =>
+        typeof part === 'object' && part !== null && 'functionResponse' in part,
+    );
+
+    if (hasFunctionResponse) {
+      // If the tool already provided a functionResponse, return the parts as is.
+      return parts;
+    }
+
+    // Otherwise, create the functionResponse and prepend it.
     const functionResponse = createFunctionResponsePart(
       callId,
       toolName,
       'Tool execution succeeded.',
     );
-    return [functionResponse, ...toParts(contentToProcess)];
+    return [functionResponse, ...parts];
   }
 
   // After this point, contentToProcess is a single Part object.

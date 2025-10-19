@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AgentExecutor, type ActivityCallback } from './executor.js';
 import { makeFakeConfig } from '../test-utils/config.js';
+
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { LSTool } from '../tools/ls.js';
 import { ReadFileTool } from '../tools/read-file.js';
@@ -90,14 +91,21 @@ const MOCK_TOOL_NOT_ALLOWED = new MockTool({ name: 'write_file_interactive' });
  * Helper to create a mock API response chunk.
  * Uses conditional spread to handle readonly functionCalls property safely.
  */
+
 const createMockResponseChunk = (
   parts: Part[],
-  functionCalls?: FunctionCall[],
-): GenerateContentResponse =>
-  ({
+  functionCalls?: Array<FunctionCall>,
+): GenerateContentResponse => {
+  const response: GenerateContentResponse = {
     candidates: [{ index: 0, content: { role: 'model', parts } }],
-    ...(functionCalls && functionCalls.length > 0 ? { functionCalls } : {}),
-  }) as unknown as GenerateContentResponse;
+    text: undefined,
+    data: undefined,
+    executableCode: undefined,
+    codeExecutionResult: undefined,
+    functionCalls: functionCalls || [],
+  };
+  return response;
+};
 
 /**
  * Helper to mock a single turn of model response in the stream.
