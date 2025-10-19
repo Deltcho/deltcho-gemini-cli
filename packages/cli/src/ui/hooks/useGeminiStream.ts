@@ -726,6 +726,13 @@ export const useGeminiStream = (
             );
             break;
           case ServerGeminiEventType.ToolCallRequest:
+            if (event.value.name === 'think') {
+              const thoughtText = event.value.args['thought'] as string;
+              setThought({
+                subject: thoughtText.substring(0, 50) + '...',
+                description: thoughtText,
+              });
+            }
             toolCallRequests.push(event.value);
             break;
           case ServerGeminiEventType.UserCancelled:
