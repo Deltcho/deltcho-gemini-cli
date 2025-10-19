@@ -537,7 +537,6 @@ export async function loadCliConfig(
 
   const allowedTools = [
     ...(argv.allowedTools || settings.tools?.allowed || []),
-    'query_analyzer',
   ];
   const allowedToolsSet = new Set(allowedTools);
 

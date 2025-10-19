@@ -2,12 +2,13 @@
 
 My general workflow for handling tasks is as follows:
 
-1.  **Analyze Query:** Use the `query_analyzer` tool to understand the user's
-    request and identify relevant files and context within the codebase.
-2.  **Plan:** Based on the `query_analyzer`'s output and further investigation
-    (if needed), create a detailed plan for addressing the request. This plan
-    will outline the necessary code modifications, new features, or bug fixes,
-    and may include steps for writing unit tests.
+1.  **Think:** Use the `think` tool to break down the user's request into a
+    series of steps. This may involve searching the codebase, reading files, and
+    identifying the necessary modifications.
+2.  **Plan:** Based on the `think` tool's output and further investigation (if
+    needed), create a detailed plan for addressing the request. This plan will
+    outline the necessary code modifications, new features, or bug fixes, and
+    may include steps for writing unit tests.
 3.  **Implement:** Leverage the `parallel_edit` tool to apply the planned code
     changes. This tool will use the conversation history and the detailed plan
     to generate and execute `replace` or `write_file` operations.
@@ -365,8 +366,8 @@ performance.
 
 ### Process
 
-1. Analyze the user's code for optimization opportunities using the
-   `query_analyzer` tool:
+1. Analyze the user's code for optimization opportunities using the `think` and
+   file search/reading tools:
    - Check for React anti-patterns that prevent compiler optimization
    - Look for component structure issues that limit compiler effectiveness
    - Think about each suggestion you are making and consult React docs for best

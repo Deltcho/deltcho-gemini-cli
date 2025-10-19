@@ -749,7 +749,6 @@ Important Rules:
       MemoryTool.Name,
       WEB_SEARCH_TOOL_NAME,
       THINK_TOOL_NAME,
-      'query_analyzer',
       'parallel_edit',
     ]);
     for (const tool of toolRegistry.getAllTools()) {

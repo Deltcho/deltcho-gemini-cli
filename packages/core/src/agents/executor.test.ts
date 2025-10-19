@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AgentExecutor, type ActivityCallback } from './executor.js';
 import { makeFakeConfig } from '../test-utils/config.js';
 
-import type { AgentRegistry } from './registry.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { LSTool } from '../tools/ls.js';
 import { ReadFileTool } from '../tools/read-file.js';
@@ -38,7 +37,6 @@ import type {
 } from './types.js';
 import { AgentTerminateMode } from './types.js';
 import type { AnyDeclarativeTool, AnyToolInvocation } from '../tools/tools.js';
-import { QueryAnalysisAgent } from './query-analyzer-agent.js';
 
 const { mockSendMessageStream, mockExecuteToolCall } = vi.hoisted(() => ({
   mockSendMessageStream: vi.fn(),
@@ -84,25 +82,6 @@ const mockedGetDirectoryContextString = vi.mocked(getDirectoryContextString);
 const mockedPromptIdContext = vi.mocked(promptIdContext);
 const mockedLogAgentStart = vi.mocked(logAgentStart);
 const mockedLogAgentFinish = vi.mocked(logAgentFinish);
-
-// Constants for testing
-const MockQueryAnalysisAgentDefinition: AgentDefinition<z.ZodUnknown> = {
-  ...(QueryAnalysisAgent || {}),
-  outputConfig: {
-    ...(QueryAnalysisAgent?.outputConfig || {}),
-    schema: z.unknown(),
-  } as OutputConfig<z.ZodUnknown>,
-  processOutput: (output: unknown) => {
-    if (!QueryAnalysisAgent.processOutput) {
-      throw new Error('QueryAnalysisAgent.processOutput is undefined');
-    }
-    return QueryAnalysisAgent.processOutput(
-      output as {
-        files: { path: string; lines?: number[] | undefined; reason: string }[];
-      },
-    );
-  },
-};
 
 // Constants for testing
 const TASK_COMPLETE_TOOL_NAME = 'complete_task';
@@ -237,15 +216,6 @@ describe('AgentExecutor', () => {
     vi.spyOn(mockConfig, 'getToolRegistry').mockResolvedValue(
       parentToolRegistry,
     );
-
-    vi.spyOn(mockConfig, 'getAgentRegistry').mockReturnValue({
-      getDefinition: vi.fn((agentName: string) => {
-        if (agentName === 'query_analyzer') {
-          return MockQueryAnalysisAgentDefinition;
-        }
-        return undefined;
-      }),
-    } as unknown as AgentRegistry);
 
     mockedGetDirectoryContextString.mockResolvedValue(
       'Mocked Environment Context',

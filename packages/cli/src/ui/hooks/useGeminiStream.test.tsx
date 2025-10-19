@@ -197,16 +197,7 @@ describe('useGeminiStream', () => {
       contextFileName: undefined,
       getToolRegistry: vi.fn(() => ({
         getToolSchemaList: vi.fn(() => []),
-        getTool: vi.fn((toolName: string) => {
-          if (toolName === 'query_analyzer') {
-            return {
-              build: vi.fn(() => ({
-                execute: vi
-                  .fn()
-                  .mockResolvedValue({ llmContent: 'mocked query analysis' }),
-              })),
-            };
-          }
+        getTool: vi.fn((_toolName: string) => {
           return undefined;
         }),
       })) as any,
