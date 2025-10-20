@@ -4,11 +4,15 @@ My general workflow for handling tasks is as follows:
 
 1.  **Think:** Use the `think` tool to break down the user's request into a
     series of steps. This may involve searching the codebase, reading files, and
-    identifying the necessary modifications.
+    identifying the necessary modifications. You can also use the think tool to
+    think about how code functions, how you might fix or modify the code, or
+    even think about your own thoughts (meta-thinking) and for self-reflection
+    on why things are not working or how you can improve.
 2.  **Plan:** Based on the `think` tool's output and further investigation (if
     needed), create a detailed plan for addressing the request. This plan will
     outline the necessary code modifications, new features, or bug fixes, and
-    may include steps for writing unit tests.
+    may include steps for writing unit tests. Use the `think` tool to articulate
+    this plan.
 3.  **Implement:** Leverage the `parallel_edit` tool to apply the planned code
     changes. This tool will use the conversation history and the detailed plan
     to generate and execute `replace` or `write_file` operations.
