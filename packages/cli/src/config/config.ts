@@ -79,6 +79,7 @@ export interface CliArgs {
   useSmartEdit: boolean | undefined;
   useWriteTodos: boolean | undefined;
   outputFormat: string | undefined;
+  thinkingBudget: number | undefined;
 }
 
 export async function parseArguments(settings: Settings): Promise<CliArgs> {
@@ -107,6 +108,13 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
           type: 'string',
           nargs: 1,
           description: `Model`,
+        })
+        .option('thinking-budget', {
+          alias: 't',
+          type: 'number',
+          nargs: 1,
+          description:
+            'Thinking budget (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
         })
         .option('prompt', {
           alias: 'p',
@@ -663,6 +671,7 @@ export async function loadCliConfig(
       settings.experimental?.codebaseInvestigatorSettings,
     retryFetchErrors: settings.general?.retryFetchErrors ?? false,
     ptyInfo: ptyInfo?.name,
+    thinkingBudget: argv.thinkingBudget,
   });
 }
 
