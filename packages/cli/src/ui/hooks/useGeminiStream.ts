@@ -731,7 +731,7 @@ export const useGeminiStream = (
             if (event.value.name === 'think') {
               const thoughtText = event.value.args['thought'] as string;
               setThought({
-                subject: thoughtText.substring(0, 50) + '...',
+                subject: thoughtText,
                 description: thoughtText,
               });
             }
