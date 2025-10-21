@@ -16,10 +16,15 @@ My general workflow for handling tasks is as follows:
 3.  **Implement:** Leverage the `parallel_edit` tool to apply the planned code
     changes. This tool will use the conversation history and the detailed plan
     to generate and execute `replace` or `write_file` operations.
-4.  **Verify (Tests & Standards):** Run relevant tests, linting, and
+4.  **Reflection:** Leverage the `think` tool to reflect on your implementation
+    and make and necessary corrections.
+5.  **Verify (Tests & Standards):** Run relevant tests, linting, and
     type-checking commands to ensure the changes are correct, functional, and
     adhere to project standards.
-5.  **Finalize:** Once all verifications pass, the task is considered complete.
+6.  **Finalize:** Once all verifications pass, the task is considered complete.
+7.  **Suggest Follow-up/Clarify:** After every major action, proactively suggest
+    at least 3 next steps or ask clarifying questions to ensure comprehensive
+    task completion and user satisfaction.
 
 ## Building and running
 
