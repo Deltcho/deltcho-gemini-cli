@@ -9,13 +9,13 @@ import { makeRelative, shortenPath } from '../utils/paths.js';
 import type { ToolInvocation, ToolLocation, ToolResult } from './tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 
-import type { PartListUnion } from '@google/genai';
+import type { Part, PartListUnion } from '@google/genai';
 import type { Config } from '../config/config.js';
-import {
-  GeminiEventType,
-  type ToolCallRequestInfo,
-  CoreToolScheduler,
-  type ToolCall,
+import { GeminiEventType, CoreToolScheduler } from '../index.js'; // Assuming index.ts exports these
+import type {
+  ToolCallRequestInfo,
+  ToolCall,
+  CompletedToolCall,
 } from '../index.js'; // Assuming index.ts exports these
 import { ToolErrorType } from './tool-error.js';
 
@@ -169,8 +169,29 @@ ${fileContent}
         return `Tool ${toolCall.request.name} for ${filePath} finished with status: ${toolCall.status}`;
       });
 
+      const allResponseParts: Part[] = [];
+      for (const toolCall of completedToolCalls as CompletedToolCall[]) {
+        if (toolCall.response && toolCall.response.responseParts) {
+          allResponseParts.push(...toolCall.response.responseParts);
+        } else {
+          // Handle cases where a toolCall might not have a response or responseParts
+          // This could happen if a tool call was cancelled or had an unexpected error
+          // before a full response could be generated.
+          // For now, create a generic error response part.
+          allResponseParts.push({
+            functionResponse: {
+              id: toolCall.request.callId,
+              name: toolCall.request.name,
+              response: {
+                error: `Tool ${toolCall.request.name} finished with status: ${toolCall.status} but no response parts were generated.`,
+              },
+            },
+          });
+        }
+      }
+
       return {
-        llmContent: summaries.join('\n'),
+        llmContent: allResponseParts,
         returnDisplay: summaries.join('\n'),
       };
     } catch (error: unknown) {

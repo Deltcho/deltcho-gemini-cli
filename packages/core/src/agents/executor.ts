@@ -340,7 +340,7 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       : undefined;
 
     try {
-      const thinkingBudget = modelConfig.thinkingBudget ?? 0;
+      const thinkingBudget = modelConfig.thinkingBudget ?? -1;
 
       const generationConfig: GenerateContentConfig = {
         temperature: modelConfig.temp,

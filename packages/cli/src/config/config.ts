@@ -80,6 +80,8 @@ export interface CliArgs {
   useWriteTodos: boolean | undefined;
   outputFormat: string | undefined;
   thinkingBudget: number | undefined;
+  codebaseInvestigatorModel: string | undefined;
+  codebaseInvestigatorThinkingBudget: number | undefined;
 }
 
 export async function parseArguments(settings: Settings): Promise<CliArgs> {
@@ -115,6 +117,19 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
           nargs: 1,
           description:
             'Thinking budget (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
+        })
+        .option('codebase-investigator-model', {
+          alias: 'cim',
+          type: 'string',
+          nargs: 1,
+          description: 'Model to use for codebase investigator',
+        })
+        .option('codebase-investigator-thinking-budget', {
+          alias: 'cit',
+          type: 'number',
+          nargs: 1,
+          description:
+            'Thinking budget for codebase investigator (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
         })
         .option('prompt', {
           alias: 'p',
@@ -667,8 +682,15 @@ export async function loadCliConfig(
     useModelRouter,
     enableMessageBusIntegration:
       settings.tools?.enableMessageBusIntegration ?? false,
-    codebaseInvestigatorSettings:
-      settings.experimental?.codebaseInvestigatorSettings,
+    codebaseInvestigatorSettings: {
+      ...settings.experimental?.codebaseInvestigatorSettings,
+      model:
+        argv.codebaseInvestigatorModel ??
+        settings.experimental?.codebaseInvestigatorSettings?.model,
+      thinkingBudget:
+        argv.codebaseInvestigatorThinkingBudget ??
+        settings.experimental?.codebaseInvestigatorSettings?.thinkingBudget,
+    },
     retryFetchErrors: settings.general?.retryFetchErrors ?? false,
     ptyInfo: ptyInfo?.name,
     thinkingBudget: argv.thinkingBudget,

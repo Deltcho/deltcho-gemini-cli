@@ -323,6 +323,8 @@ describe('gemini.tsx main function kitty protocol', () => {
       approvalMode: undefined,
       allowedMcpServerNames: undefined,
       allowedTools: undefined,
+      codebaseInvestigatorModel: undefined,
+      codebaseInvestigatorThinkingBudget: undefined,
       experimentalAcp: undefined,
       extensions: undefined,
       listExtensions: undefined,
