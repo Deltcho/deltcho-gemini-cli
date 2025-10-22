@@ -64,6 +64,7 @@ import path from 'node:path';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import { useKeypress } from './useKeypress.js';
 import type { LoadedSettings } from '../../config/settings.js';
+import { getWorkflowInstructions } from './workflowInstructions.js';
 
 enum StreamProcessingStatus {
   Completed,
@@ -398,14 +399,17 @@ export const useGeminiStream = (
           if (!atCommandResult.shouldProceed) {
             return { queryToSend: null, shouldProceed: false };
           }
-          localQueryToSendToGemini = atCommandResult.processedQuery;
         } else {
           // Normal query for Gemini
+          const finalQuery = getWorkflowInstructions(
+            geminiClient.getFormattedToolDefinitions(),
+            trimmedQuery,
+          );
           addItem(
             { type: MessageType.USER, text: trimmedQuery },
             userMessageTimestamp,
           );
-          localQueryToSendToGemini = trimmedQuery;
+          localQueryToSendToGemini = finalQuery;
         }
       } else {
         // It's a function response (PartListUnion that isn't a string)
@@ -429,6 +433,7 @@ export const useGeminiStream = (
       logger,
       shellModeActive,
       scheduleToolCalls,
+      geminiClient,
     ],
   );
 

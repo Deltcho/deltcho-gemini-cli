@@ -207,6 +207,36 @@ export class GeminiClient {
     this.chat = await this.startChat();
   }
 
+  getFormattedToolDefinitions(): string {
+    const toolRegistry = this.config.getToolRegistry();
+    const toolDeclarations = toolRegistry.getFunctionDeclarations();
+    if (toolDeclarations.length === 0) {
+      return 'No tools available.';
+    }
+
+    let formattedTools = 'Available Tools:\\n';
+    for (const tool of toolDeclarations) {
+      formattedTools += `  - **${tool.name}**: ${tool.description}\\n`;
+      if (tool.parameters && tool.parameters.properties) {
+        formattedTools += '    Parameters:\\n';
+        for (const [paramName, paramProps] of Object.entries(
+          tool.parameters.properties,
+        )) {
+          const isRequired =
+            tool.parameters.required &&
+            tool.parameters.required.includes(paramName);
+          formattedTools += `      - \`${paramName}\` (${
+            (paramProps as { type?: string }).type || 'any'
+          }${isRequired ? ', required' : ''}): ${
+            (paramProps as { description?: string }).description ||
+            'No description.'
+          }\\n`;
+        }
+      }
+    }
+    return formattedTools;
+  }
+
   getChatRecordingService(): ChatRecordingService | undefined {
     return this.chat?.getChatRecordingService();
   }
