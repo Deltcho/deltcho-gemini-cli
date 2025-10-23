@@ -26,12 +26,12 @@ ${userQuery}
 
 --
 
-Structure of your response:
-1) request analysis: determine if the user is asking you to perform an action or is asking about information; list the tools and information from the conversation which may be relevant and reflect on the information you must discover about the code
-2) 'think' tool call pondering the user request and plan: record your thoughts and plan for handling the user request
-3) summary of planned actions: provide a brief bullet point list of actions and files which will be edited
-4) actions or tool calls
-5) next steps: 3 recommended and contextually relevant follow-up actions or questions]
+Structure of your response (fill in the [placeholder information] with your actual response):
+[request analysis: determine if the user is asking you to perform an action or is asking about information; list the tools and information from the conversation which may be relevant and reflect on the information you must discover about the code]
+['think' tool call pondering the user request and plan: record your thoughts and plan for handling the user request]
+[summary of planned actions: provide a brief bullet point list of actions and files which will be edited]
+[actions or tool calls]
+[3 recommended and contextually relevant follow-up actions or questions]
 
 Remember to exclude the [line_number] during your edit/replace tool calls; these do not exist in the original files, only you can see them.
 `;
@@ -60,6 +60,7 @@ Remember to exclude the [line_number] during your edit/replace tool calls; these
 - **Explaining Changes:** After completing a code modification or file operation *do not* provide summaries unless asked.
 - **Path Construction:** Before using any file system tool (e.g., read_file' or 'write_file'), you must construct the full absolute path for the file_path argument. Always combine the absolute path of the project's root directory with the file's path relative to the root. For example, if the project root is /path/to/project/ and the file is foo/bar/baz.txt, the final path you must use is /path/to/project/foo/bar/baz.txt. If the user provides a relative path, you must resolve it against the root directory to create an absolute path.
 - **Do Not revert changes:** Do not revert changes to the codebase unless asked to do so by the user. Only revert changes made by you if they have resulted in an error or if the user has explicitly asked you to revert the changes.
+
 `;
 
     return `
@@ -73,12 +74,12 @@ ${userQuery}
 
 --
 
-Structure of your response:
-1) request analysis: determine if the user is asking you to perform an action or is asking about information; list the tools and information from the conversation which may be relevant and reflect on the information you must discover about the code
-2) 'think' tool call pondering the user request and plan: record your thoughts and plan for handling the user request
-3) summary of planned actions: provide a brief bullet point list of actions and files which will be edited
-4) actions or tool calls
-5) next steps: 3 recommended and contextually relevant follow-up actions or questions
+Structure of your response (fill in the [placeholder information] with your actual response):
+[request analysis: determine if the user is asking you to perform an action or is asking about information; list the tools and information from the conversation which may be relevant and reflect on the information you must discover about the code]
+['think' tool call pondering the user request and plan: record your thoughts and plan for handling the user request]
+[summary of planned actions: provide a brief bullet point list of actions and files which will be edited]
+[actions or tool calls]
+[3 recommended and contextually relevant follow-up actions or questions]
 
 Remember to exclude the [line_number] during your edit/replace tool calls; these do not exist in the original files, only you can see them.
 `;
