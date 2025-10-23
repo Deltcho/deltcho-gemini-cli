@@ -401,7 +401,7 @@ export const useGeminiStream = (
           }
         } else {
           // Normal query for Gemini
-          const finalQuery = getWorkflowInstructions(
+          const finalQuery = await getWorkflowInstructions(
             geminiClient.getFormattedToolDefinitions(),
             trimmedQuery,
           );
