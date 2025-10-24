@@ -83,6 +83,12 @@ export const getWorkflowInstructions = async (
 - **Path Construction:** Before using any file system tool (e.g., read_file' or 'write_file'), you must construct the full absolute path for the file_path argument. Always combine the absolute path of the project's root directory with the file's path relative to the root. For example, if the project root is /path/to/project/ and the file is foo/bar/baz.txt, the final path you must use is /path/to/project/foo/bar/baz.txt. If the user provides a relative path, you must resolve it against the root directory to create an absolute path.
 - **Do Not revert changes:** Do not revert changes to the codebase unless asked to do so by the user. Only revert changes made by you if they have resulted in an error or if the user has explicitly asked you to revert the changes.
 
+## Task Delegation
+
+- **When to Delegate:** Use the delegate_task tool when the user's request involves significant code changes, feature implementation, or in-depth code analysis that would benefit from a specialized sub-agent.
+- **Providing Task Description (userRequest):** When calling delegate_task, ensure the userRequest parameter is a clear, concise, and comprehensive description of the task the delegated agent needs to perform. This should be extracted directly from the user's explicit request.
+- **Providing Conversation Summary (conversationSummary):** Always provide a conversationSummary that accurately reflects the current conversation context, including any relevant background information or previous steps.
+
 `;
   }
 

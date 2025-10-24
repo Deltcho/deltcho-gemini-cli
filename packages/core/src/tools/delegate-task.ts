@@ -26,7 +26,7 @@ import { z } from 'zod';
 export interface DelegateTaskParams {
   conversationSummary: string;
   userRequest: string;
-  taskName?: string;
+  taskName: string;
 }
 
 export interface ProposedChange {
@@ -98,10 +98,10 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 The specialized agent must NOT modify files or run shell commands. It must only read the codebase and produce a structured proposal of code changes.
 The prompt must:
 - Clearly define the agent's identity and scope (proposal-only, non-destructive).
-- Include rigorous rules on tool usage limited to READ-ONLY tools available (ls, read_file, glob, grep, web_fetch, web_search, think).
+- Include rigorous rules on tool usage limited to READ-ONLY tools available (ls, read_file, glob, grep, web_fetch, web_search, think, complete_task).
 - Include domain-specific sub-prompts when applicable (e.g., include the <frontend_aesthetics> block if the task involves frontend or UI/UX work).
 - Emphasize producing high-quality, minimal, idiomatic changes and including test file updates when needed in the proposal.
-- End with explicit termination instructions: the agent must call complete_task with a JSON object matching this schema:
+- End with explicit termination instructions: the agent must call 'complete_task' tool with a JSON object matching this schema:
 {
   "summary": string,
   "proposedChanges": [
@@ -144,8 +144,17 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
     // Append a small enforcement footer to ensure proposal-only behavior.
     const enforcement = `
 ---
-IMPORTANT: You must not call any editing or shell tools. Use only read-only tools to inspect the codebase. When finished, call complete_task with a JSON 
-object {"summary": string, "proposedChanges": Array<...>} as specified above. Do not include additional commentary outside JSON in the final tool call.`;
+IMPORTANT: Use only read-only tools to inspect the codebase. When finished, call complete_task with a JSON 
+object {"summary": string, "proposedChanges": Array<...>} as specified above. Do not include additional commentary outside JSON in the final tool call.
+
+Upon completion of your solution planning, you must call the \`complete_task\` tool with a JSON object matching this schema:
+{
+  "summary": string,
+  "proposedChanges": [
+    { "filePath": string, "action": "create"|"modify"|"delete", "content"?: string, "rationale"?: string }
+  ]
+}
+`;
 
     return `${text}\n${enforcement}`;
   }
@@ -204,7 +213,7 @@ object {"summary": string, "proposedChanges": Array<...>} as specified above. Do
       },
       runConfig: {
         max_time_minutes: 10,
-        max_turns: 25,
+        max_turns: 100,
       },
       toolConfig: {
         tools: [
@@ -247,9 +256,7 @@ object {"summary": string, "proposedChanges": Array<...>} as specified above. Do
     updateOutput?: (out: string) => void,
   ): Promise<ToolResult> {
     const { conversationSummary, userRequest } = this.params;
-    const taskName =
-      (this.params.taskName && this.sanitizeTaskName(this.params.taskName)) ||
-      this.sanitizeTaskName(userRequest.slice(0, 60));
+    const taskName = this.sanitizeTaskName(this.params.taskName);
 
     if (updateOutput) updateOutput('Synthesizing specialized task prompt...\n');
     const systemPrompt = await this.generateSpecializedPrompt(
@@ -266,7 +273,7 @@ Structure of your response (fill in the [placeholder information] with your actu
 [summary of planned actions: provide a brief bullet point list of actions and files which will be edited]
 [actions or tool calls]
 
-Remember to exclude the [line_number] during your edit/replace tool calls; these do not exist in the original files, only you can see them.`;
+Remember to exclude the [line_number] during your edit/replace tool calls; these do not exist in the original files, only you can see them. Always call the 'complete_task' tool whether you have given up or have completed the task fully`;
 
     const finalSystemPrompt = `${systemPrompt}\n\n ${workflowInstructions}`;
 
@@ -353,11 +360,10 @@ export class DelegateTaskTool extends BaseDeclarativeTool<
           },
           taskName: {
             type: 'string',
-            description:
-              'Optional short name/slug for the task. If omitted, will be derived from the request.',
+            description: 'Short name/slug for the task.',
           },
         },
-        required: ['conversationSummary', 'userRequest'],
+        required: ['conversationSummary', 'userRequest', 'taskName'],
       },
     );
   }
