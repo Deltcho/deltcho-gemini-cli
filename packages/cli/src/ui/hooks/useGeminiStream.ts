@@ -334,16 +334,18 @@ export const useGeminiStream = (
         onDebugMessage(`User query: '${trimmedQuery}'`);
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
-        // Detect area selection command like "/p-design" or "/p-frontend"
-        let selectedAreaName: string | undefined;
+        // Detect prompt selection command like "/p-design" or "/p-frontend"
+        let selectedPromptName: string | undefined;
         let effectiveQuery = trimmedQuery;
-        const areaMatch = /^\/p-([a-z0-9_-]+)\b/i.exec(trimmedQuery);
-        if (areaMatch) {
-          selectedAreaName = areaMatch[1].toLowerCase();
-          effectiveQuery = trimmedQuery.slice(areaMatch[0].length).trimStart();
+        const promptNameMatch = /^\/p-([a-z0-9_-]+)\b/i.exec(trimmedQuery);
+        if (promptNameMatch) {
+          selectedPromptName = promptNameMatch[1].toLowerCase();
+          effectiveQuery = trimmedQuery
+            .slice(promptNameMatch[0].length)
+            .trimStart();
         }
 
-        if (!shellModeActive && !selectedAreaName) {
+        if (!shellModeActive && !selectedPromptName) {
           // Handle UI-only commands first
           const slashCommandResult = isSlashCommand(trimmedQuery)
             ? await handleSlashCommand(trimmedQuery)
@@ -413,7 +415,7 @@ export const useGeminiStream = (
           const finalQuery = await getWorkflowInstructions(
             geminiClient.getFormattedToolDefinitions(),
             effectiveQuery,
-            selectedAreaName,
+            selectedPromptName,
           );
           addItem(
             { type: MessageType.USER, text: trimmedQuery },

@@ -10,24 +10,24 @@ import path from 'node:path';
 export const getWorkflowInstructions = async (
   toolDefinitions: string,
   userQuery: string,
-  areaName?: string,
+  promptName?: string,
 ) => {
-  const metaPromptPath = path.join(
+  const defaultPromptPath = path.join(
     process.cwd(),
     '.gemini',
     'prompts',
     'default.txt',
   );
-  const areaPromptPath = areaName
-    ? path.join(process.cwd(), '.gemini', 'prompts', `${areaName}.txt`)
+  const promptPath = promptName
+    ? path.join(process.cwd(), '.gemini', 'prompts', `${promptName}.txt`)
     : undefined;
 
   let promptContent: string | null = null;
 
   // Try area-specific prompt first if provided
-  if (areaPromptPath) {
+  if (promptPath) {
     try {
-      promptContent = await fs.readFile(areaPromptPath, 'utf-8');
+      promptContent = await fs.readFile(promptPath, 'utf-8');
     } catch (error: unknown) {
       if (
         typeof error === 'object' &&
@@ -37,11 +37,11 @@ export const getWorkflowInstructions = async (
         (error as never).code === 'ENOENT'
       ) {
         console.warn(
-          `Warning: ${areaPromptPath} not found. Falling back to .gemini/prompts/default.txt if available.`,
+          `Warning: ${promptPath} not found. Falling back to .gemini/prompts/default.txt if available.`,
         );
       } else {
         console.warn(
-          `Warning: Failed to read ${areaPromptPath}. Falling back to .gemini/default.txt if available.`,
+          `Warning: Failed to read ${promptPath}. Falling back to .gemini/default.txt if available.`,
         );
       }
     }
@@ -50,7 +50,7 @@ export const getWorkflowInstructions = async (
   // If no area prompt, try the default .gemini/prompts/default.txt
   if (promptContent === null) {
     try {
-      promptContent = await fs.readFile(metaPromptPath, 'utf-8');
+      promptContent = await fs.readFile(defaultPromptPath, 'utf-8');
     } catch (error: unknown) {
       if (
         typeof error === 'object' &&
