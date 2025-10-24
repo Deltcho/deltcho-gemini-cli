@@ -10,43 +10,65 @@ import path from 'node:path';
 export const getWorkflowInstructions = async (
   toolDefinitions: string,
   userQuery: string,
+  areaName?: string,
 ) => {
-  const metaPromptPath = path.join(process.cwd(), '.gemini', 'meta_prompt.txt');
-  let metaPrompt: string;
-  try {
-    metaPrompt = await fs.readFile(metaPromptPath, 'utf-8');
-    return `
-${metaPrompt}
+  const metaPromptPath = path.join(
+    process.cwd(),
+    '.gemini',
+    'prompts',
+    'default.txt',
+  );
+  const areaPromptPath = areaName
+    ? path.join(process.cwd(), '.gemini', 'prompts', `${areaName}.txt`)
+    : undefined;
 
-Here are the tools at your disposal:
-${toolDefinitions}
+  let promptContent: string | null = null;
 
-Now, please address the following request:
-${userQuery}
-
---
-
-Structure of your response (fill in the [placeholder information] with your actual response):
-[request analysis: determine if the user is asking you to perform an action or is asking about information; list the tools and information from the conversation which may be relevant and reflect on the information you must discover about the code]
-['think' tool call pondering the user request and plan: record your thoughts and plan for handling the user request]
-[summary of planned actions: provide a brief bullet point list of actions and files which will be edited]
-[actions or tool calls]
-[3 recommended and contextually relevant follow-up actions or questions]
-
-Remember to exclude the [line_number] during your edit/replace tool calls; these do not exist in the original files, only you can see them.
-`;
-  } catch (error: unknown) {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      error.code === 'ENOENT'
-    ) {
-      console.warn(
-        `Warning: .gemini/meta_prompt.txt not found. Using default workflow instructions.`,
-      );
+  // Try area-specific prompt first if provided
+  if (areaPromptPath) {
+    try {
+      promptContent = await fs.readFile(areaPromptPath, 'utf-8');
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        // @ts-expect-error - node error code
+        (error as never).code === 'ENOENT'
+      ) {
+        console.warn(
+          `Warning: ${areaPromptPath} not found. Falling back to .gemini/prompts/default.txt if available.`,
+        );
+      } else {
+        console.warn(
+          `Warning: Failed to read ${areaPromptPath}. Falling back to .gemini/default.txt if available.`,
+        );
+      }
     }
-    const metaPrompt = `As an AI assistant, your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
+  }
+
+  // If no area prompt, try the default .gemini/prompts/default.txt
+  if (promptContent === null) {
+    try {
+      promptContent = await fs.readFile(metaPromptPath, 'utf-8');
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        // @ts-expect-error - node error code
+        (error as never).code === 'ENOENT'
+      ) {
+        console.warn(
+          `Warning: .gemini/prompts/default.txt not found. Using default workflow instructions.`,
+        );
+      }
+    }
+  }
+
+  // If still not found, use the hardcoded default
+  if (promptContent === null) {
+    promptContent = `As an AI assistant, your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.
 
 # Core Mandates
 
@@ -62,9 +84,10 @@ Remember to exclude the [line_number] during your edit/replace tool calls; these
 - **Do Not revert changes:** Do not revert changes to the codebase unless asked to do so by the user. Only revert changes made by you if they have resulted in an error or if the user has explicitly asked you to revert the changes.
 
 `;
+  }
 
-    return `
-${metaPrompt}
+  return `
+${promptContent}
 
 Here are the tools at your disposal:
 ${toolDefinitions}
@@ -83,5 +106,4 @@ Structure of your response (fill in the [placeholder information] with your actu
 
 Remember to exclude the [line_number] during your edit/replace tool calls; these do not exist in the original files, only you can see them.
 `;
-  }
 };

@@ -334,7 +334,16 @@ export const useGeminiStream = (
         onDebugMessage(`User query: '${trimmedQuery}'`);
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
-        if (!shellModeActive) {
+        // Detect area selection command like "/p-design" or "/p-frontend"
+        let selectedAreaName: string | undefined;
+        let effectiveQuery = trimmedQuery;
+        const areaMatch = /^\/p-([a-z0-9_-]+)\b/i.exec(trimmedQuery);
+        if (areaMatch) {
+          selectedAreaName = areaMatch[1].toLowerCase();
+          effectiveQuery = trimmedQuery.slice(areaMatch[0].length).trimStart();
+        }
+
+        if (!shellModeActive && !selectedAreaName) {
           // Handle UI-only commands first
           const slashCommandResult = isSlashCommand(trimmedQuery)
             ? await handleSlashCommand(trimmedQuery)
@@ -380,9 +389,9 @@ export const useGeminiStream = (
         }
 
         // Handle @-commands (which might involve tool calls)
-        if (isAtCommand(trimmedQuery)) {
+        if (isAtCommand(effectiveQuery)) {
           const atCommandResult = await handleAtCommand({
-            query: trimmedQuery,
+            query: effectiveQuery,
             config,
             addItem,
             onDebugMessage,
@@ -403,7 +412,8 @@ export const useGeminiStream = (
           // Normal query for Gemini
           const finalQuery = await getWorkflowInstructions(
             geminiClient.getFormattedToolDefinitions(),
-            trimmedQuery,
+            effectiveQuery,
+            selectedAreaName,
           );
           addItem(
             { type: MessageType.USER, text: trimmedQuery },
