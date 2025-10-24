@@ -1186,6 +1186,16 @@ export class Config {
       registerCoreTool(WriteTodosTool, this);
     }
 
+    // Register Delegate Task tool
+    try {
+      const { DelegateTaskTool } = await import('../tools/delegate-task.js');
+      registerCoreTool(DelegateTaskTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register DelegateTaskTool:', err);
+      }
+    }
+
     // Register Subagents as Tools
     if (this.getCodebaseInvestigatorSettings().enabled) {
       const definition = this.agentRegistry.getDefinition(
