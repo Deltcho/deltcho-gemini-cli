@@ -29,7 +29,11 @@ import { ReadManyFilesTool } from '../tools/read-many-files.js';
 import {
   GLOB_TOOL_NAME,
   WEB_SEARCH_TOOL_NAME,
+  WEB_FETCH_TOOL_NAME,
   THINK_TOOL_NAME,
+  WRITE_FILE_TOOL_NAME,
+  EDIT_TOOL_NAME,
+  SHELL_TOOL_NAME,
 } from '../tools/tool-names.js';
 import { promptIdContext } from '../utils/promptIdContext.js';
 import { logAgentStart, logAgentFinish } from '../telemetry/loggers.js';
@@ -106,8 +110,15 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       }
 
       // Validate that all registered tools are safe for non-interactive
-      // execution.
-      await AgentExecutor.validateTools(agentToolRegistry, definition.name);
+      // execution. If message-bus integration is enabled, we allow interactive
+      // tools that require user confirmation (e.g. edit/replace, write_file, shell).
+      const allowInteractive =
+        !!runtimeContext.getEnableMessageBusIntegration?.();
+      await AgentExecutor.validateTools(
+        agentToolRegistry,
+        definition.name,
+        allowInteractive,
+      );
     }
 
     // Get the parent prompt ID from context
@@ -736,10 +747,10 @@ Important Rules:
   private static async validateTools(
     toolRegistry: ToolRegistry,
     agentName: string,
+    allowInteractive = false,
   ): Promise<void> {
-    // Tools that are non-interactive. This is temporary until we have tool
-    // confirmations for subagents.
-    const allowlist = new Set([
+    // Tools that are considered safe in fully non-interactive mode.
+    const baseAllowlist = new Set<string>([
       LSTool.Name,
       ReadFileTool.Name,
       GrepTool.Name,
@@ -748,15 +759,28 @@ Important Rules:
       ReadManyFilesTool.Name,
       MemoryTool.Name,
       WEB_SEARCH_TOOL_NAME,
+      WEB_FETCH_TOOL_NAME,
       THINK_TOOL_NAME,
       'parallel_edit',
     ]);
+
+    // If interactive confirmations are enabled via MessageBus/Policy Engine,
+    // permit tools that require explicit user approval.
+    const interactiveAdds = new Set<string>([
+      EDIT_TOOL_NAME, // replace (edit)
+      WRITE_FILE_TOOL_NAME,
+      SHELL_TOOL_NAME,
+    ]);
+
+    const effectiveAllowlist = allowInteractive
+      ? new Set<string>([...baseAllowlist, ...interactiveAdds])
+      : baseAllowlist;
+
     for (const tool of toolRegistry.getAllTools()) {
-      if (!allowlist.has(tool.name)) {
+      if (!effectiveAllowlist.has(tool.name)) {
         throw new Error(
-          `Tool "${tool.name}" is not on the allow-list for non-interactive ` +
-            `execution in agent "${agentName}". Only tools that do not require user ` +
-            `confirmation can be used in subagents.`,
+          `Tool "${tool.name}" is not on the allow-list for ${allowInteractive ? 'interactive' : 'non-interactive'} ` +
+            `execution in agent "${agentName}". ${allowInteractive ? 'Tools requiring user confirmation are permitted, but this tool is not supported for subagents.' : 'Only tools that do not require user confirmation can be used in subagents.'}`,
         );
       }
     }

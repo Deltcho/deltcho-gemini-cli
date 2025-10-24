@@ -11,18 +11,17 @@ import type { Part } from '@google/genai';
 import type { ToolInvocation, ToolResult } from './tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 import type { Config } from '../config/config.js';
-import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
+import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
 import { AgentExecutor } from '../agents/executor.js';
 import type { AgentDefinition, AgentInputs } from '../agents/types.js';
 import { LSTool } from './ls.js';
 import { ReadFileTool } from './read-file.js';
 import { GrepTool } from './grep.js';
 import { ThinkTool } from './think.js';
-import { WRITE_FILE_TOOL_NAME, GLOB_TOOL_NAME } from './tool-names.js';
+import { GLOB_TOOL_NAME } from './tool-names.js';
 import { WebFetchTool } from './web-fetch.js';
 import { WebSearchTool } from './web-search.js';
-import { ParallelEditTool } from './parallel-edit.js';
-import { EDIT_TOOL_NAME, SHELL_TOOL_NAME } from './tool-names.js';
+import { z } from 'zod';
 
 export interface DelegateTaskParams {
   conversationSummary: string;
@@ -30,10 +29,17 @@ export interface DelegateTaskParams {
   taskName?: string;
 }
 
+export interface ProposedChange {
+  filePath: string;
+  action: 'create' | 'modify' | 'delete';
+  content?: string;
+  rationale?: string;
+}
+
 export interface DelegateTaskResultData {
   taskName: string;
   promptPath: string;
-  modifiedFiles: string[];
+  proposedChanges: ProposedChange[];
   summary: string;
 }
 
@@ -88,12 +94,20 @@ Avoid generic AI-generated aesthetics:
 Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. You still tend to converge on common choices (Space Grotesk, for example) across generations. Avoid this: it is critical that you think outside the box!
 </frontend_aesthetics>`;
 
-    const instruction = `You are to produce a single, self-contained SYSTEM PROMPT to specialize an autonomous software agent to execute the user's task end-to-end within this repository using available tools. The prompt must:
-- Clearly define the agent's identity and scope.
-- Include rigorous rules on tool usage and editing style consistent with this project.
+    const instruction = `You are to produce a single, self-contained SYSTEM PROMPT to specialize an autonomous software agent to SOLUTION PLANNING ONLY for the user's task within this repository using available tools.
+The specialized agent must NOT modify files or run shell commands. It must only read the codebase and produce a structured proposal of code changes.
+The prompt must:
+- Clearly define the agent's identity and scope (proposal-only, non-destructive).
+- Include rigorous rules on tool usage limited to READ-ONLY tools available (ls, read_file, glob, grep, web_fetch, web_search, think).
 - Include domain-specific sub-prompts when applicable (e.g., include the <frontend_aesthetics> block if the task involves frontend or UI/UX work).
-- Emphasize producing high-quality, minimal, idiomatic changes and adding tests when needed.
-- End with explicit termination instructions: the agent must call complete_task with a concise summary of changes when done.
+- Emphasize producing high-quality, minimal, idiomatic changes and including test file updates when needed in the proposal.
+- End with explicit termination instructions: the agent must call complete_task with a JSON object matching this schema:
+{
+  "summary": string,
+  "proposedChanges": [
+    { "filePath": string, "action": "create"|"modify"|"delete", "content"?: string, "rationale"?: string }
+  ]
+}
 
 Context for prompt design:
 [Conversation Summary]
@@ -109,7 +123,7 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
 
     const res = await cg.generateContent(
       {
-        model: DEFAULT_GEMINI_MODEL,
+        model: DEFAULT_GEMINI_FLASH_MODEL,
         contents: [{ role: 'user', parts: [{ text: instruction }] }],
         config: { temperature: 0.2, topP: 0.95 },
       },
@@ -126,7 +140,14 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
         'Failed to synthesize specialized prompt. Empty response.',
       );
     }
-    return text;
+
+    // Append a small enforcement footer to ensure proposal-only behavior.
+    const enforcement = `
+---
+IMPORTANT: You must not call any editing or shell tools. Use only read-only tools to inspect the codebase. When finished, call complete_task with a JSON 
+object {"summary": string, "proposedChanges": Array<...>} as specified above. Do not include additional commentary outside JSON in the final tool call.`;
+
+    return `${text}\n${enforcement}`;
   }
 
   private async writePromptFile(
@@ -140,12 +161,34 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
     return filePath;
   }
 
-  private createTaskAgent(systemPrompt: string): AgentDefinition {
+  private createTaskAgent(
+    systemPrompt: string,
+  ): AgentDefinition<typeof OutputSchema> {
+    const OutputSchema = z
+      .object({
+        summary: z
+          .string()
+          .describe('Concise summary of the recommended solution and risks.'),
+        proposedChanges: z
+          .array(
+            z.object({
+              filePath: z.string(),
+              action: z.enum(['create', 'modify', 'delete']),
+              content: z.string().optional(),
+              rationale: z.string().optional(),
+            }),
+          )
+          .describe(
+            'List of proposed code changes. For create/modify, include full file content in "content". For delete, omit content.',
+          ),
+      })
+      .passthrough();
+
     return {
       name: 'task_delegate_agent',
       displayName: 'Task Delegate Agent',
       description:
-        'A specialized autonomous agent that performs a delegated task within this repository using available tools.',
+        'A specialized autonomous agent that READS the repo and returns a structured proposal of code changes. It does not modify files.',
       promptConfig: {
         systemPrompt,
         query: (inputs: AgentInputs) =>
@@ -154,7 +197,7 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
           }\n\nUser Request:\n${inputs['userRequest'] as string}`,
       },
       modelConfig: {
-        model: DEFAULT_GEMINI_MODEL,
+        model: DEFAULT_GEMINI_FLASH_MODEL,
         temp: 0.2,
         top_p: 0.95,
         thinkingBudget: this.config.getThinkingBudget?.() ?? -1,
@@ -170,12 +213,8 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
           GLOB_TOOL_NAME,
           GrepTool.Name,
           ThinkTool.Name,
-          EDIT_TOOL_NAME,
-          WRITE_FILE_TOOL_NAME,
-          ParallelEditTool.Name,
           WebFetchTool.Name,
           WebSearchTool.Name,
-          SHELL_TOOL_NAME,
         ],
       },
       inputConfig: {
@@ -193,6 +232,13 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
           },
         },
       },
+      outputConfig: {
+        outputName: 'proposal',
+        description:
+          'Structured plan with summary and list of proposed code changes.',
+        schema: OutputSchema,
+      },
+      processOutput: (output) => JSON.stringify(output, null, 2),
     };
   }
 
@@ -212,22 +258,24 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
     );
 
     const promptPath = await this.writePromptFile(taskName, systemPrompt);
+    const workflowInstructions = `
 
-    // Snapshot before
-    let beforeHash = '';
-    let afterHash = '';
-    const git = await this.config.getGitService();
-    try {
-      beforeHash = await git.createFileSnapshot(
-        `[delegate_task:${taskName}] start`,
-      );
-    } catch {
-      // ignore snapshot errors
-    }
+Structure of your response (fill in the [placeholder information] with your actual response):
+[request analysis: determine if the user is asking you to perform an action or is asking about information; list the tools and information from the conversation which may be relevant and reflect on the information you must discover about the code]
+['think' tool call pondering the user request and plan: record your thoughts and plan for handling the user request]
+[summary of planned actions: provide a brief bullet point list of actions and files which will be edited]
+[actions or tool calls]
+[verification of actions or tool calls, including re-reading code produced or files after editing]
+[complete_task]
 
-    // Run the specialized agent
-    const agent = this.createTaskAgent(systemPrompt);
-    if (updateOutput) updateOutput('Launching specialized agent...\n');
+Remember to exclude the [line_number] during your edit/replace tool calls; these do not exist in the original files, only you can see them.`;
+
+    const finalSystemPrompt = `${systemPrompt}\n\n ${workflowInstructions}`;
+
+    // Run the specialized agent in PROPOSAL mode (read-only)
+    const agent = this.createTaskAgent(finalSystemPrompt);
+    if (updateOutput)
+      updateOutput('Launching specialized agent (proposal-only)...\n');
 
     const executor = await AgentExecutor.create(
       agent,
@@ -248,48 +296,35 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
       signal,
     );
 
-    // Snapshot after
+    // Parse the structured proposal from the subagent
+    let summary = 'Task completed.';
+    let proposedChanges: ProposedChange[] = [];
     try {
-      afterHash = await git.createFileSnapshot(
-        `[delegate_task:${taskName}] end`,
-      );
-    } catch {
-      // ignore
-    }
-
-    // Try to get changed files between snapshots if possible
-    let modifiedFiles: string[] = [];
-    try {
-      // @ts-expect-error - method added by our patch (optional at runtime)
-      if (
-        beforeHash &&
-        afterHash &&
-        typeof git.getChangedFilesBetweenCommits === 'function'
-      ) {
-        // @ts-expect-error - see above
-        modifiedFiles = await git.getChangedFilesBetweenCommits(
-          beforeHash,
-          afterHash,
-        );
+      const parsed = JSON.parse(output.result || '{}');
+      if (parsed && typeof parsed === 'object') {
+        summary = typeof parsed.summary === 'string' ? parsed.summary : summary;
+        if (Array.isArray(parsed.proposedChanges)) {
+          proposedChanges = parsed.proposedChanges as ProposedChange[];
+        }
       }
     } catch {
-      // ignore
+      // If parsing fails, keep defaults and include raw text in summary
+      summary = output.result || summary;
     }
-
-    const summary = output.result || 'Task completed.';
 
     const data: DelegateTaskResultData = {
       taskName,
       promptPath,
-      modifiedFiles,
+      proposedChanges,
       summary,
     };
 
     const json = JSON.stringify(data, null, 2);
 
+    const filesCount = proposedChanges.length;
     return {
       llmContent: [{ text: json }],
-      returnDisplay: `Delegate Task Completed\n\nTask: ${taskName}\nPrompt: ${promptPath}\nModified Files: ${modifiedFiles.length}\n\nSummary:\n${summary}\n`,
+      returnDisplay: `Delegate Task Proposal\n\nTask: ${taskName}\nPrompt: ${promptPath}\nProposed Changes: ${filesCount} file(s)\n\nSummary:\n${summary}\n`,
     };
   }
 }
@@ -304,7 +339,7 @@ export class DelegateTaskTool extends BaseDeclarativeTool<
     super(
       DelegateTaskTool.Name,
       'Delegate Task',
-      'Creates a specialized prompt for a sub-agent based on the conversation summary and user request, runs the task autonomously, and returns modified files and a summary.',
+      'Creates a specialized prompt for a sub-agent based on the conversation summary and user request, launches a read-only subagent to analyze and propose code changes (without modifying files), and returns the proposed changes plus a summary.',
       Kind.Think,
       {
         type: 'object',
