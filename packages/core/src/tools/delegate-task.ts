@@ -74,8 +74,10 @@ class DelegateTaskInvocation extends BaseToolInvocation<
     const cg = await this.config.getContentGenerator();
 
     const examplePrompt = `
+You are a master UI designer. You can visualize a beautiful and efficient game flow and menu in your mind's eye. You always carefully agonize over every detail and ensure that no mere mortal could find fault in your work before putting it on display.
+
 <frontend_aesthetics>
-You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
+Stay away from generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
 
 Typography: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics.
 
@@ -91,12 +93,13 @@ Avoid generic AI-generated aesthetics:
 - Predictable layouts and component patterns
 - Cookie-cutter design that lacks context-specific character
 
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. You still tend to converge on common choices (Space Grotesk, for example) across generations. Avoid this: it is critical that you think outside the box!
+Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. It is critical that you think outside the box!
 </frontend_aesthetics>`;
 
-    const instruction = `You are to produce a single, self-contained SYSTEM PROMPT to specialize an autonomous software agent to SOLUTION PLANNING ONLY for the user's task within this repository using available tools.
+    const instruction = `You are to produce a single, self-contained SYSTEM PROMPT to specialize an autonomous expert agent who will perform SOLUTION PLANNING ONLY for the user's task within this repository using available tools.
 The specialized agent must NOT modify files or run shell commands. It must only read the codebase and produce a structured proposal of code changes.
 The prompt must:
+
 - Clearly define the agent's identity and scope (proposal-only, non-destructive).
 - Include domain-specific sub-prompts when applicable (e.g., include the <frontend_aesthetics> block if the task involves frontend or UI/UX work).
 - Emphasize producing high-quality, minimal, idiomatic changes and including test file updates when needed in the proposal.
