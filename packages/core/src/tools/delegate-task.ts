@@ -98,7 +98,6 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 The specialized agent must NOT modify files or run shell commands. It must only read the codebase and produce a structured proposal of code changes.
 The prompt must:
 - Clearly define the agent's identity and scope (proposal-only, non-destructive).
-- Include rigorous rules on tool usage limited to READ-ONLY tools available (ls, read_file, glob, grep, web_fetch, web_search, think, complete_task).
 - Include domain-specific sub-prompts when applicable (e.g., include the <frontend_aesthetics> block if the task involves frontend or UI/UX work).
 - Emphasize producing high-quality, minimal, idiomatic changes and including test file updates when needed in the proposal.
 - End with explicit termination instructions: the agent must call 'complete_task' tool with a JSON object matching this schema:
@@ -144,7 +143,7 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
     // Append a small enforcement footer to ensure proposal-only behavior.
     const enforcement = `
 ---
-IMPORTANT: Use only read-only tools to inspect the codebase. When finished, call complete_task with a JSON 
+IMPORTANT: When finished, call complete_task with a JSON 
 object {"summary": string, "proposedChanges": Array<...>} as specified above. Do not include additional commentary outside JSON in the final tool call.
 
 Upon completion of your solution planning, you must call the \`complete_task\` tool with a JSON object matching this schema:
@@ -352,7 +351,7 @@ export class DelegateTaskTool extends BaseDeclarativeTool<
           conversationSummary: {
             type: 'string',
             description:
-              'A summary of the prior conversation/context to inform specialization.',
+              'A summary of the prior conversation/context to inform specialization. Only include information relevant for performing the task.',
           },
           userRequest: {
             type: 'string',
