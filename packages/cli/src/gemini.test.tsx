@@ -323,8 +323,6 @@ describe('gemini.tsx main function kitty protocol', () => {
       approvalMode: undefined,
       allowedMcpServerNames: undefined,
       allowedTools: undefined,
-      codebaseInvestigatorModel: undefined,
-      codebaseInvestigatorThinkingBudget: undefined,
       experimentalAcp: undefined,
       extensions: undefined,
       listExtensions: undefined,
@@ -334,6 +332,8 @@ describe('gemini.tsx main function kitty protocol', () => {
       useWriteTodos: undefined,
       outputFormat: undefined,
       thinkingBudget: undefined,
+      subagentModel: undefined,
+      subagentThinkingBudget: undefined,
     });
 
     await main();

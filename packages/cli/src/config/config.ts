@@ -80,8 +80,8 @@ export interface CliArgs {
   useWriteTodos: boolean | undefined;
   outputFormat: string | undefined;
   thinkingBudget: number | undefined;
-  codebaseInvestigatorModel: string | undefined;
-  codebaseInvestigatorThinkingBudget: number | undefined;
+  subagentModel: string | undefined;
+  subagentThinkingBudget: number | undefined;
 }
 
 export async function parseArguments(settings: Settings): Promise<CliArgs> {
@@ -118,18 +118,19 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
           description:
             'Thinking budget (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
         })
-        .option('codebase-investigator-model', {
-          alias: 'cim',
+        .option('subagent-model', {
+          alias: 'sam',
           type: 'string',
           nargs: 1,
-          description: 'Model to use for codebase investigator',
+          description:
+            'Model to use for all subagents (e.g., codebase investigator, delegate tasks)',
         })
-        .option('codebase-investigator-thinking-budget', {
-          alias: 'cit',
+        .option('subagent-thinking-budget', {
+          alias: 'sat',
           type: 'number',
           nargs: 1,
           description:
-            'Thinking budget for codebase investigator (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
+            'Thinking budget for all subagents (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
         })
         .option('prompt', {
           alias: 'p',
@@ -611,6 +612,10 @@ export async function loadCliConfig(
 
   const ptyInfo = await getPty();
 
+  // Determine subagent overrides with backward-compat fallback to deprecated flags
+  const subagentModel = argv.subagentModel;
+  const subagentThinkingBudget = argv.subagentThinkingBudget;
+
   return new Config({
     sessionId,
     embeddingModel: DEFAULT_GEMINI_EMBEDDING_MODEL,
@@ -684,16 +689,15 @@ export async function loadCliConfig(
       settings.tools?.enableMessageBusIntegration ?? false,
     codebaseInvestigatorSettings: {
       ...settings.experimental?.codebaseInvestigatorSettings,
-      model:
-        argv.codebaseInvestigatorModel ??
-        settings.experimental?.codebaseInvestigatorSettings?.model,
+      model: settings.experimental?.codebaseInvestigatorSettings?.model,
       thinkingBudget:
-        argv.codebaseInvestigatorThinkingBudget ??
         settings.experimental?.codebaseInvestigatorSettings?.thinkingBudget,
     },
     retryFetchErrors: settings.general?.retryFetchErrors ?? false,
     ptyInfo: ptyInfo?.name,
     thinkingBudget: argv.thinkingBudget,
+    subagentModel,
+    subagentThinkingBudget,
   });
 }
 

@@ -287,6 +287,8 @@ export interface ConfigParameters {
   enableShellOutputEfficiency?: boolean;
   ptyInfo?: string;
   thinkingBudget?: number;
+  subagentModel?: string;
+  subagentThinkingBudget?: number;
 }
 
 export class Config {
@@ -303,6 +305,9 @@ export class Config {
   private workspaceContext: WorkspaceContext;
   private readonly debugMode: boolean;
   private readonly question: string | undefined;
+
+  private readonly subagentModel: string | undefined;
+  private readonly subagentThinkingBudget: number | undefined;
 
   private readonly coreTools: string[] | undefined;
   private readonly allowedTools: string[] | undefined;
@@ -398,6 +403,10 @@ export class Config {
     );
     this.debugMode = params.debugMode;
     this.question = params.question;
+
+    // Subagent overrides (applies to all subagents if provided)
+    this.subagentModel = params.subagentModel;
+    this.subagentThinkingBudget = params.subagentThinkingBudget;
 
     this.coreTools = params.coreTools;
     this.allowedTools = params.allowedTools;
@@ -519,6 +528,14 @@ export class Config {
 
   getThinkingBudget(): number {
     return this.thinkingBudget;
+  }
+
+  getSubagentModel(): string | undefined {
+    return this.subagentModel;
+  }
+
+  getSubagentThinkingBudget(): number | undefined {
+    return this.subagentThinkingBudget;
   }
 
   /**
