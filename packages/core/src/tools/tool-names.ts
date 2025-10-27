@@ -16,6 +16,8 @@ export const WEB_FETCH_TOOL_NAME = 'web_fetch';
 export const EDIT_TOOL_NAME = 'replace';
 export const THINK_TOOL_NAME = 'think';
 export const SHELL_TOOL_NAME = 'run_shell_command';
+export const GET_MEMORIES_TOOL_NAME = 'get_memories';
+export const RECORD_MEMORIES_TOOL_NAME = 'record_memories';
 
 // TODO: Migrate other tool names here to follow this pattern and prevent future circular dependencies.
 // Candidates for migration:

@@ -1203,6 +1203,27 @@ export class Config {
       registerCoreTool(WriteTodosTool, this);
     }
 
+    // Register Get/Record Memories tools
+    try {
+      const { GetMemoriesTool } = await import('../tools/get-memories.js');
+      registerCoreTool(GetMemoriesTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register GetMemoriesTool:', err);
+      }
+    }
+
+    try {
+      const { RecordMemoriesTool } = await import(
+        '../tools/record-memories.js'
+      );
+      registerCoreTool(RecordMemoriesTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register RecordMemoriesTool:', err);
+      }
+    }
+
     // Register Delegate Task tool
     try {
       const { DelegateTaskTool } = await import('../tools/delegate-task.js');

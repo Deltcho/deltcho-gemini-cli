@@ -2,29 +2,49 @@
 
 My general workflow for handling tasks is as follows:
 
-1.  **Think:** Use the `think` tool to break down the user's request into a
+1.  **Retrieve relevant memories:** `get_memories` if this request needs more
+    context.
+2.  **Think:** Use the `think` tool to break down the user's request into a
     series of steps. This may involve searching the codebase, reading files, and
     identifying the necessary modifications. You can also use the think tool to
     think about how code functions, how you might fix or modify the code, or
     even think about your own thoughts (meta-thinking) and for self-reflection
     on why things are not working or how you can improve.
-2.  **Plan:** Based on the `think` tool's output and further investigation (if
+3.  **Plan:** Based on the `think` tool's output and further investigation (if
     needed), create a detailed plan for addressing the request. This plan will
     outline the necessary code modifications, new features, or bug fixes, and
     may include steps for writing unit tests. Use the `think` tool to articulate
     this plan.
-3.  **Implement:** Leverage the `parallel_edit` tool to apply the planned code
+4.  **Implement:** Leverage the `parallel_edit` tool to apply the planned code
     changes. This tool will use the conversation history and the detailed plan
     to generate and execute `replace` or `write_file` operations.
-4.  **Reflection:** Leverage the `think` tool to reflect on your implementation
+5.  **Reflection:** Leverage the `think` tool to reflect on your implementation
     and make and necessary corrections.
-5.  **Verify (Tests & Standards):** Run relevant tests, linting, and
+6.  **Verify (Tests & Standards):** Run relevant tests, linting, and
     type-checking commands to ensure the changes are correct, functional, and
     adhere to project standards.
-6.  **Finalize:** Once all verifications pass, the task is considered complete.
-7.  **Suggest Follow-up/Clarify:** After every major action, proactively suggest
+7.  **Finalize:** Once all verifications pass, the task is considered complete.
+8.  **Update Memory:** `record_memories` if you encountered and solved an issue,
+    gained deeper insight into code functionality and/or, or if learned
+    something that will be helpful in the future.
+9.  **Suggest Follow-up/Clarify:** After every major action, proactively suggest
     at least 3 next steps or ask clarifying questions to ensure comprehensive
     task completion and user satisfaction.
+
+## Memory Tools
+
+This agent has access to long-term memory capabilities through the
+`record_memories` and `get_memories` tools.
+
+- **record_memories:** Use this tool to save important information, code
+  snippets, or learnings that you want to retain across sessions. This is useful
+  for remembering user preferences, common project patterns, or solutions to
+  recurring problems. Provide a concise `memoryTrace` (10-15 words) and a
+  `memoryCategory` (1-2 words) to help with future retrieval.
+
+- **get_memories:** Use this tool to retrieve relevant information from your
+  long-term memory. Provide a `summary` of the current conversation or user
+  request, and the tool will select and return memories that are most pertinent.
 
 ## Building and running
 
@@ -277,7 +297,7 @@ the future.
 
 ### Role
 
-You are a React assistant that helps users write more efficient and optimizable
+YouAre a React assistant that helps users write more efficient and optimizable
 React code. You specialize in identifying patterns that enable React Compiler to
 automatically apply optimizations, reducing unnecessary re-renders and improving
 application performance.
@@ -403,4 +423,4 @@ comments.
 ## General style requirements
 
 Use hyphens instead of underscores in flag names (e.g. `my-flag` instead of
-`my_flag`).
+`_flag`).
