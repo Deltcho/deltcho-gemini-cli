@@ -39,8 +39,10 @@ This agent has access to long-term memory capabilities through the
 - **record_memories:** Use this tool to save important information, code
   snippets, or learnings that you want to retain across sessions. This is useful
   for remembering user preferences, common project patterns, or solutions to
-  recurring problems. Provide a concise `memoryTrace` (10-15 words) and a
-  `memoryCategory` (1-2 words) to help with future retrieval.
+  recurring problems. The `fullMemory` should be a standalone object that
+  contains all the deep dive into relevant and important details. Provide a
+  concise `memoryTrace` (10-15 words) and a `memoryCategory` (1-2 words) to help
+  with future retrieval..
 
 - **get_memories:** Use this tool to retrieve relevant information from your
   long-term memory. Provide a `summary` of the current conversation or user

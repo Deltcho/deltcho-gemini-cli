@@ -135,7 +135,7 @@ export class RecordMemoriesTool extends BaseDeclarativeTool<
           fullMemory: {
             type: 'string',
             description:
-              'The full description of the code, interaction, or learning to remember.',
+              'The full description of the code, interaction, or learning to remember. This needs to be a standalone memory that captures all the important details.',
           },
         },
         required: ['memoryTrace', 'memoryCategory', 'fullMemory'],
