@@ -197,12 +197,9 @@ describe('useGeminiStream', () => {
       vertexai: false,
       showMemoryUsage: false,
       contextFileName: undefined,
-      getToolRegistry: vi.fn(() => ({
-        getToolSchemaList: vi.fn(() => []),
-        getTool: vi.fn((_toolName: string) => {
-          return undefined;
-        }),
-      })) as any,
+      getToolRegistry: vi.fn(
+        () => ({ getToolSchemaList: vi.fn(() => []) }) as any,
+      ),
       getProjectRoot: vi.fn(() => '/test/dir'),
       getCheckpointingEnabled: vi.fn(() => false),
       getGeminiClient: mockGetGeminiClient,
