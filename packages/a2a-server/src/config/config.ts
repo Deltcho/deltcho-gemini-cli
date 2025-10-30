@@ -71,7 +71,6 @@ export async function loadConfig(
         settings.fileFiltering?.enableRecursiveFileSearch,
     },
     ideMode: false,
-    folderTrust: settings.folderTrust === true,
     extensionLoader,
   };
 

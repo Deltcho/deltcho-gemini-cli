@@ -89,8 +89,11 @@ export function tryParseGithubUrl(source: string): GithubRepoInfo | null {
     source = source.replace('git@github.com:', '');
   }
   // Default to a github repo path, so `source` can be just an org/repo
-  const parsedUrl = URL.parse(source, 'https://github.com');
-  if (!parsedUrl) {
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(source, 'https://github.com');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
     throw new Error(`Invalid repo URL: ${source}`);
   }
   if (parsedUrl?.host !== 'github.com') {

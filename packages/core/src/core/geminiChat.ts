@@ -124,43 +124,6 @@ function validateHistory(history: Content[]) {
 }
 
 /**
- * Extracts the curated (valid) history from a comprehensive history.
- *
- * @remarks
- * The model may sometimes generate invalid or empty contents(e.g., due to safety
- * filters or recitation). Extracting valid turns from the history
- * ensures that subsequent requests could be accepted by the model.
- */
-function extractCuratedHistory(comprehensiveHistory: Content[]): Content[] {
-  if (comprehensiveHistory === undefined || comprehensiveHistory.length === 0) {
-    return [];
-  }
-  const curatedHistory: Content[] = [];
-  const length = comprehensiveHistory.length;
-  let i = 0;
-  while (i < length) {
-    if (comprehensiveHistory[i].role === 'user') {
-      curatedHistory.push(comprehensiveHistory[i]);
-      i++;
-    } else {
-      const modelOutput: Content[] = [];
-      let isValid = true;
-      while (i < length && comprehensiveHistory[i].role === 'model') {
-        modelOutput.push(comprehensiveHistory[i]);
-        if (isValid && !isValidContent(comprehensiveHistory[i])) {
-          isValid = false;
-        }
-        i++;
-      }
-      if (isValid) {
-        curatedHistory.push(...modelOutput);
-      }
-    }
-  }
-  return curatedHistory;
-}
-
-/**
  * Custom error to signal that a stream completed with invalid content,
  * which should trigger a retry.
  */
@@ -195,10 +158,6 @@ export class GeminiChat {
     validateHistory(history);
     this.chatRecordingService = new ChatRecordingService(config);
     this.chatRecordingService.initialize();
-  }
-
-  setSystemInstruction(sysInstr: string) {
-    this.generationConfig.systemInstruction = sysInstr;
   }
 
   /**
@@ -412,13 +371,17 @@ export class GeminiChat {
    * @return History contents alternating between user and model for the entire
    * chat session.
    */
-  getHistory(curated: boolean = false): Content[] {
-    const history = curated
-      ? extractCuratedHistory(this.history)
-      : this.history;
-    // Deep copy the history to avoid mutating the history outside of the
-    // chat session.
-    return structuredClone(history);
+  getHistory(curated = false): Content[] {
+    if (curated) {
+      return this.history.filter(
+        (content) => !content.parts?.some((part) => 'thought' in part),
+      );
+    }
+    return this.history;
+  }
+
+  setSystemInstruction(systemInstruction: string | Part) {
+    this.generationConfig.systemInstruction = systemInstruction;
   }
 
   /**

@@ -75,6 +75,9 @@ export interface CliArgs {
   outputFormat: string | undefined;
   fakeResponses: string | undefined;
   recordResponses: string | undefined;
+  thinkingBudget: number | undefined;
+  subagentModel: string | undefined;
+  subagentThinkingBudget: number | undefined;
 }
 
 export async function parseArguments(settings: Settings): Promise<CliArgs> {
@@ -103,6 +106,27 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
           type: 'string',
           nargs: 1,
           description: `Model`,
+        })
+        .option('thinking-budget', {
+          alias: 't',
+          type: 'number',
+          nargs: 1,
+          description:
+            'Thinking budget (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
+        })
+        .option('subagent-model', {
+          alias: 'sam',
+          type: 'string',
+          nargs: 1,
+          description:
+            'Model to use for all subagents (e.g., codebase investigator, delegate tasks)',
+        })
+        .option('subagent-thinking-budget', {
+          alias: 'sat',
+          type: 'number',
+          nargs: 1,
+          description:
+            'Thinking budget for all subagents (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
         })
         .option('prompt', {
           alias: 'p',
@@ -540,7 +564,9 @@ export async function loadCliConfig(
     debugLogger.debug('===================================');
   }
 
-  const allowedTools = argv.allowedTools || settings.tools?.allowed || [];
+  const allowedTools = [
+    ...(argv.allowedTools || settings.tools?.allowed || []),
+  ];
   const allowedToolsSet = new Set(allowedTools);
 
   // Interactive mode: explicit -i flag or (TTY + no args + no -p flag)
@@ -633,6 +659,10 @@ export async function loadCliConfig(
 
   const ptyInfo = await getPty();
 
+  // Determine subagent overrides with backward-compat fallback to deprecated flags
+  const subagentModel = argv.subagentModel;
+  const subagentThinkingBudget = argv.subagentThinkingBudget;
+
   return new Config({
     sessionId,
     embeddingModel: DEFAULT_GEMINI_EMBEDDING_MODEL,
@@ -703,13 +733,22 @@ export async function loadCliConfig(
       format: (argv.outputFormat ?? settings.output?.format) as OutputFormat,
     },
     useModelRouter,
-    enableMessageBusIntegration,
-    codebaseInvestigatorSettings:
-      settings.experimental?.codebaseInvestigatorSettings,
-    fakeResponses: argv.fakeResponses,
-    recordResponses: argv.recordResponses,
+    enableMessageBusIntegration:
+      settings.tools?.enableMessageBusIntegration ?? false,
+    codebaseInvestigatorSettings: {
+      ...settings.experimental?.codebaseInvestigatorSettings,
+      model:
+        argv.subagentModel ||
+        settings.experimental?.codebaseInvestigatorSettings?.model,
+      thinkingBudget:
+        argv.subagentThinkingBudget ||
+        settings.experimental?.codebaseInvestigatorSettings?.thinkingBudget,
+    },
     retryFetchErrors: settings.general?.retryFetchErrors ?? false,
     ptyInfo: ptyInfo?.name,
+    thinkingBudget: argv.thinkingBudget,
+    subagentModel,
+    subagentThinkingBudget,
   });
 }
 

@@ -15,6 +15,7 @@ import type { Storage } from '../config/storage.js';
 export class GitService {
   private projectRoot: string;
   private storage: Storage;
+  getChangedFilesBetweenCommits: never | undefined;
 
   constructor(projectRoot: string, storage: Storage) {
     this.projectRoot = path.resolve(projectRoot);

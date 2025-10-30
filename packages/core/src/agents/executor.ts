@@ -20,14 +20,20 @@ import { executeToolCall } from '../core/nonInteractiveToolExecutor.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import type { ToolCallRequestInfo } from '../core/turn.js';
 import { getDirectoryContextString } from '../utils/environmentContext.js';
+import { RipGrepTool } from '../tools/ripGrep.js';
 import {
   GLOB_TOOL_NAME,
-  GREP_TOOL_NAME,
-  LS_TOOL_NAME,
-  MEMORY_TOOL_NAME,
-  READ_FILE_TOOL_NAME,
-  READ_MANY_FILES_TOOL_NAME,
   WEB_SEARCH_TOOL_NAME,
+  WEB_FETCH_TOOL_NAME,
+  THINK_TOOL_NAME,
+  WRITE_FILE_TOOL_NAME,
+  EDIT_TOOL_NAME,
+  SHELL_TOOL_NAME,
+  MEMORY_TOOL_NAME,
+  READ_MANY_FILES_TOOL_NAME,
+  GREP_TOOL_NAME,
+  READ_FILE_TOOL_NAME,
+  LS_TOOL_NAME,
 } from '../tools/tool-names.js';
 import { promptIdContext } from '../utils/promptIdContext.js';
 import { logAgentStart, logAgentFinish } from '../telemetry/loggers.js';
@@ -105,8 +111,15 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       }
 
       // Validate that all registered tools are safe for non-interactive
-      // execution.
-      await AgentExecutor.validateTools(agentToolRegistry, definition.name);
+      // execution. If message-bus integration is enabled, we allow interactive
+      // tools that require user confirmation (e.g. edit/replace, write_file, shell).
+      const allowInteractive =
+        !!runtimeContext.getEnableMessageBusIntegration?.();
+      await AgentExecutor.validateTools(
+        agentToolRegistry,
+        definition.name,
+        allowInteractive,
+      );
     }
 
     // Get the parent prompt ID from context
@@ -168,9 +181,12 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       const chat = await this.createChatObject(inputs);
       const tools = this.prepareToolsList();
 
-      const query = this.definition.promptConfig.query
-        ? templateString(this.definition.promptConfig.query, inputs)
-        : 'Get Started!';
+      const query =
+        typeof this.definition.promptConfig.query === 'function'
+          ? this.definition.promptConfig.query(inputs)
+          : this.definition.promptConfig.query
+            ? templateString(this.definition.promptConfig.query, inputs)
+            : 'Get Started!';
       let currentMessage: Content = { role: 'user', parts: [{ text: query }] };
 
       while (true) {
@@ -336,12 +352,14 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       : undefined;
 
     try {
+      const thinkingBudget = modelConfig.thinkingBudget ?? -1;
+
       const generationConfig: GenerateContentConfig = {
         temperature: modelConfig.temp,
         topP: modelConfig.top_p,
         thinkingConfig: {
-          includeThoughts: true,
-          thinkingBudget: modelConfig.thinkingBudget ?? -1,
+          includeThoughts: thinkingBudget !== 0,
+          thinkingBudget,
         },
       };
 
@@ -536,27 +554,50 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       };
 
       // Create a promise for the tool execution
-      const executionPromise = (async () => {
-        const { response: toolResponse } = await executeToolCall(
-          this.runtimeContext,
-          requestInfo,
-          signal,
-        );
+      const executionPromise = (async (): Promise<Part[]> => {
+        try {
+          const { response: toolResponse } = await executeToolCall(
+            this.runtimeContext,
+            requestInfo,
+            signal,
+          );
 
-        if (toolResponse.error) {
+          if (toolResponse.error) {
+            this.emitActivity('ERROR', {
+              context: 'tool_call',
+              name: functionCall.name,
+              error: toolResponse.error.message,
+            });
+          } else {
+            this.emitActivity('TOOL_CALL_END', {
+              name: functionCall.name,
+              output: toolResponse.resultDisplay,
+            });
+          }
+
+          // Ensure we return an array of parts, even if it's empty or undefined
+          return toolResponse.responseParts ?? [];
+        } catch (error) {
+          const errorMessage = String(error);
           this.emitActivity('ERROR', {
-            context: 'tool_call',
+            context: 'tool_call_exception',
             name: functionCall.name,
-            error: toolResponse.error.message,
+            error: errorMessage,
           });
-        } else {
-          this.emitActivity('TOOL_CALL_END', {
-            name: functionCall.name,
-            output: toolResponse.resultDisplay,
-          });
-        }
 
-        return toolResponse.responseParts;
+          // Return a single error response part to satisfy the API's requirement
+          return [
+            {
+              functionResponse: {
+                name: functionCall.name as string,
+                id: callId,
+                response: {
+                  error: `Tool execution failed with an exception: ${errorMessage}`,
+                },
+              },
+            },
+          ];
+        }
       })();
 
       toolExecutionPromises.push(executionPromise);
@@ -707,24 +748,39 @@ Important Rules:
   private static async validateTools(
     toolRegistry: ToolRegistry,
     agentName: string,
+    allowInteractive = false,
   ): Promise<void> {
-    // Tools that are non-interactive. This is temporary until we have tool
-    // confirmations for subagents.
-    const allowlist = new Set([
+    const baseAllowlist = new Set<string>([
       LS_TOOL_NAME,
       READ_FILE_TOOL_NAME,
       GREP_TOOL_NAME,
+      RipGrepTool.Name,
       GLOB_TOOL_NAME,
       READ_MANY_FILES_TOOL_NAME,
       MEMORY_TOOL_NAME,
       WEB_SEARCH_TOOL_NAME,
+      WEB_FETCH_TOOL_NAME,
+      THINK_TOOL_NAME,
+      'parallel_edit',
     ]);
+
+    // If interactive confirmations are enabled via MessageBus/Policy Engine,
+    // permit tools that require explicit user approval.
+    const interactiveAdds = new Set<string>([
+      EDIT_TOOL_NAME, // replace (edit)
+      WRITE_FILE_TOOL_NAME,
+      SHELL_TOOL_NAME,
+    ]);
+
+    const effectiveAllowlist = allowInteractive
+      ? new Set<string>([...baseAllowlist, ...interactiveAdds])
+      : baseAllowlist;
+
     for (const tool of toolRegistry.getAllTools()) {
-      if (!allowlist.has(tool.name)) {
+      if (!effectiveAllowlist.has(tool.name)) {
         throw new Error(
-          `Tool "${tool.name}" is not on the allow-list for non-interactive ` +
-            `execution in agent "${agentName}". Only tools that do not require user ` +
-            `confirmation can be used in subagents.`,
+          `Tool "${tool.name}" is not on the allow-list for ${allowInteractive ? 'interactive' : 'non-interactive'} ` +
+            `execution in agent "${agentName}". ${allowInteractive ? 'Tools requiring user confirmation are permitted, but this tool is not supported for subagents.' : 'Only tools that do not require user confirmation can be used in subagents.'}`,
         );
       }
     }

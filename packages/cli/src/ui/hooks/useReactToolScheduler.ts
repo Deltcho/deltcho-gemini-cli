@@ -261,7 +261,10 @@ export function mapToDisplay(
       let description: string;
       let renderOutputAsMarkdown = false;
 
-      if (trackedCall.status === 'error') {
+      if (trackedCall.request.name === 'think') {
+        displayName = trackedCall.tool?.displayName ?? 'Thinking';
+        description = trackedCall.request.args['thought'] as string;
+      } else if (trackedCall.status === 'error') {
         displayName =
           trackedCall.tool === undefined
             ? trackedCall.request.name

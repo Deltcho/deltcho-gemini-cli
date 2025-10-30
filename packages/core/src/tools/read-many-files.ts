@@ -529,7 +529,7 @@ export class ReadManyFilesTool extends BaseDeclarativeTool<
     super(
       ReadManyFilesTool.Name,
       'ReadManyFiles',
-      `Reads content from multiple files specified by paths or glob patterns within a configured target directory. For text files, it concatenates their content into a single string. It is primarily designed for text-based files. However, it can also process image (e.g., .png, .jpg) and PDF (.pdf) files if their file names or extensions are explicitly included in the 'paths' argument. For these explicitly requested non-text files, their data is read and included in a format suitable for model consumption (e.g., base64 encoded).
+      `Reads content from multiple files specified by paths or glob patterns within a configured target directory. For text files, it concatenates their content into a single string, with each line prepended by its 1-based line number in brackets (e.g., '[1] line content'). It is primarily designed for text-based files. However, it can also process image (e.g., .png, .jpg) and PDF (.pdf) files if their file names or extensions are explicitly included in the 'paths' argument. For these explicitly requested non-text files, their data is read and included in a format suitable for model consumption (e.g., base64 encoded).
 
 This tool is useful when you need to understand or analyze a collection of files, such as:
 - Getting an overview of a codebase or parts of it (e.g., all TypeScript files in the 'src' directory).

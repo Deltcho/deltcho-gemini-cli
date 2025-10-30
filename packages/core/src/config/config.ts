@@ -31,6 +31,7 @@ import { ReadManyFilesTool } from '../tools/read-many-files.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
 import { WebSearchTool } from '../tools/web-search.js';
 import { GeminiClient } from '../core/client.js';
+import { ThinkTool } from '../tools/think.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { GitService } from '../services/gitService.js';
@@ -53,6 +54,7 @@ import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
 import type { MCPOAuthConfig } from '../mcp/oauth-provider.js';
 import { ideContextStore } from '../ide/ideContext.js';
 import { WriteTodosTool } from '../tools/write-todos.js';
+import { ParallelEditTool } from '../tools/parallel-edit.js';
 import type { FileSystemService } from '../services/fileSystemService.js';
 import { StandardFileSystemService } from '../services/fileSystemService.js';
 import { logRipgrepFallback } from '../telemetry/loggers.js';
@@ -289,6 +291,9 @@ export interface ConfigParameters {
   recordResponses?: string;
   ptyInfo?: string;
   disableYoloMode?: boolean;
+  thinkingBudget?: number;
+  subagentModel?: string;
+  subagentThinkingBudget?: number;
 }
 
 export class Config {
@@ -305,6 +310,9 @@ export class Config {
   private workspaceContext: WorkspaceContext;
   private readonly debugMode: boolean;
   private readonly question: string | undefined;
+
+  private readonly subagentModel: string | undefined;
+  private readonly subagentThinkingBudget: number | undefined;
 
   private readonly coreTools: string[] | undefined;
   private readonly allowedTools: string[] | undefined;
@@ -390,6 +398,7 @@ export class Config {
   readonly fakeResponses?: string;
   readonly recordResponses?: string;
   private readonly disableYoloMode: boolean;
+  private readonly thinkingBudget: number;
 
   constructor(params: ConfigParameters) {
     this.sessionId = params.sessionId;
@@ -404,6 +413,10 @@ export class Config {
     );
     this.debugMode = params.debugMode;
     this.question = params.question;
+
+    // Subagent overrides (applies to all subagents if provided)
+    this.subagentModel = params.subagentModel;
+    this.subagentThinkingBudget = params.subagentThinkingBudget;
 
     this.coreTools = params.coreTools;
     this.allowedTools = params.allowedTools;
@@ -489,8 +502,8 @@ export class Config {
     this.enableMessageBusIntegration =
       params.enableMessageBusIntegration ?? false;
     this.codebaseInvestigatorSettings = {
-      enabled: params.codebaseInvestigatorSettings?.enabled ?? false,
-      maxNumTurns: params.codebaseInvestigatorSettings?.maxNumTurns ?? 15,
+      enabled: params.codebaseInvestigatorSettings?.enabled ?? true,
+      maxNumTurns: params.codebaseInvestigatorSettings?.maxNumTurns ?? 100,
       maxTimeMinutes: params.codebaseInvestigatorSettings?.maxTimeMinutes ?? 5,
       thinkingBudget:
         params.codebaseInvestigatorSettings?.thinkingBudget ??
@@ -514,6 +527,9 @@ export class Config {
     };
     this.retryFetchErrors = params.retryFetchErrors ?? false;
     this.disableYoloMode = params.disableYoloMode ?? false;
+    this.thinkingBudget = params.thinkingBudget ?? DEFAULT_THINKING_MODE;
+    this.subagentModel = params.subagentModel;
+    this.subagentThinkingBudget = params.subagentThinkingBudget;
 
     if (params.contextFileName) {
       setGeminiMdFilename(params.contextFileName);
@@ -528,6 +544,18 @@ export class Config {
     }
     this.geminiClient = new GeminiClient(this);
     this.modelRouterService = new ModelRouterService(this);
+  }
+
+  getThinkingBudget(): number {
+    return this.thinkingBudget;
+  }
+
+  getSubagentModel(): string | undefined {
+    return this.subagentModel;
+  }
+
+  getSubagentThinkingBudget(): number | undefined {
+    return this.subagentThinkingBudget;
   }
 
   /**
@@ -1211,8 +1239,41 @@ export class Config {
     registerCoreTool(ShellTool, this);
     registerCoreTool(MemoryTool);
     registerCoreTool(WebSearchTool, this);
+    registerCoreTool(ParallelEditTool, this);
+    registerCoreTool(ThinkTool, this);
     if (this.getUseWriteTodos()) {
       registerCoreTool(WriteTodosTool, this);
+    }
+
+    // Register Get/Record Memories tools
+    try {
+      const { GetMemoriesTool } = await import('../tools/get-memories.js');
+      registerCoreTool(GetMemoriesTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register GetMemoriesTool:', err);
+      }
+    }
+
+    try {
+      const { RecordMemoriesTool } = await import(
+        '../tools/record-memories.js'
+      );
+      registerCoreTool(RecordMemoriesTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register RecordMemoriesTool:', err);
+      }
+    }
+
+    // Register Delegate Task tool
+    try {
+      const { DelegateTaskTool } = await import('../tools/delegate-task.js');
+      registerCoreTool(DelegateTaskTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register DelegateTaskTool:', err);
+      }
     }
 
     // Register Subagents as Tools

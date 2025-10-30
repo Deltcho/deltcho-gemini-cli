@@ -10,6 +10,7 @@ import type {
   Content,
   Tool,
   GenerateContentResponse,
+  Part,
 } from '@google/genai';
 import {
   getDirectoryContextString,
@@ -32,7 +33,6 @@ import {
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_MODEL_AUTO,
-  DEFAULT_THINKING_MODE,
   getEffectiveModel,
 } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
@@ -122,6 +122,12 @@ export class GeminiClient {
     return this.getChat().getHistory();
   }
 
+  setSystemInstruction(systemInstruction: string | Part) {
+    if (this.chat) {
+      this.chat.setSystemInstruction(systemInstruction);
+    }
+  }
+
   stripThoughtsFromHistory() {
     this.getChat().stripThoughtsFromHistory();
   }
@@ -140,6 +146,36 @@ export class GeminiClient {
 
   async resetChat(): Promise<void> {
     this.chat = await this.startChat();
+  }
+
+  getFormattedToolDefinitions(): string {
+    const toolRegistry = this.config.getToolRegistry();
+    const toolDeclarations = toolRegistry.getFunctionDeclarations();
+    if (toolDeclarations.length === 0) {
+      return 'No tools available.';
+    }
+
+    let formattedTools = 'Available Tools:\\n';
+    for (const tool of toolDeclarations) {
+      formattedTools += `  - **${tool.name}**: ${tool.description}\\n`;
+      if (tool.parameters && tool.parameters.properties) {
+        formattedTools += '    Parameters:\\n';
+        for (const [paramName, paramProps] of Object.entries(
+          tool.parameters.properties,
+        )) {
+          const isRequired =
+            tool.parameters.required &&
+            tool.parameters.required.includes(paramName);
+          formattedTools += `      - \`${paramName}\` (${
+            (paramProps as { type?: string }).type || 'any'
+          }${isRequired ? ', required' : ''}): ${
+            (paramProps as { description?: string }).description ||
+            'No description.'
+          }\\n`;
+        }
+      }
+    }
+    return formattedTools;
   }
 
   getChatRecordingService(): ChatRecordingService | undefined {
@@ -181,11 +217,13 @@ export class GeminiClient {
       const model = this.config.getModel();
 
       const config: GenerateContentConfig = { ...this.generateContentConfig };
+      const thinkingBudget = this.config.getThinkingBudget();
+      const shouldIncludeThoughts = thinkingBudget !== 0;
 
       if (isThinkingSupported(model)) {
         config.thinkingConfig = {
-          includeThoughts: true,
-          thinkingBudget: DEFAULT_THINKING_MODE,
+          includeThoughts: shouldIncludeThoughts,
+          thinkingBudget,
         };
       }
 

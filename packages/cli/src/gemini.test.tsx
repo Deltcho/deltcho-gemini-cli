@@ -365,6 +365,9 @@ describe('gemini.tsx main function kitty protocol', () => {
       outputFormat: undefined,
       fakeResponses: undefined,
       recordResponses: undefined,
+      thinkingBudget: undefined,
+      subagentModel: undefined,
+      subagentThinkingBudget: undefined,
     });
 
     await main();

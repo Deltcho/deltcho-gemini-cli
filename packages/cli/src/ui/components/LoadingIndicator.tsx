@@ -36,7 +36,9 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
     return null;
   }
 
-  const primaryText = thought?.subject || currentLoadingPhrase;
+  const primaryText = thought?.subject
+    ? `Thought: ${thought.subject}`
+    : currentLoadingPhrase;
 
   const cancelAndTimerContent =
     streamingState !== StreamingState.WaitingForConfirmation
@@ -65,6 +67,13 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
             <Text color={theme.text.accent} wrap="truncate-end">
               {primaryText}
             </Text>
+          )}
+          {thought?.description && thought.description !== thought?.subject && (
+            <Box marginTop={1}>
+              <Text color={theme.text.secondary} wrap="wrap">
+                {thought.description}
+              </Text>
+            </Box>
           )}
           {!isNarrow && cancelAndTimerContent && (
             <Text color={theme.text.secondary}> {cancelAndTimerContent}</Text>

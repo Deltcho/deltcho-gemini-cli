@@ -7,6 +7,7 @@
 import type { Config } from '../config/config.js';
 import type { AgentDefinition } from './types.js';
 import { CodebaseInvestigatorAgent } from './codebase-investigator.js';
+
 import { type z } from 'zod';
 import { debugLogger } from '../utils/debugLogger.js';
 
