@@ -26,7 +26,8 @@ My general workflow for handling tasks is as follows:
 7.  **Finalize:** Once all verifications pass, the task is considered complete.
 8.  **Update Memory:** `record_memories` if you encountered and solved an issue,
     gained deeper insight into code functionality and/or, or if learned
-    something that will be helpful in the future.
+    something that will be helpful in the future. **Consider recording memories
+    more frequently, especially after significant progress or learning.**
 9.  **Suggest Follow-up/Clarify:** After every major action, proactively suggest
     at least 3 next steps or ask clarifying questions to ensure comprehensive
     task completion and user satisfaction.

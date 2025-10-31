@@ -6,7 +6,6 @@
 
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import type { Stats } from 'node:fs';
 
 import type {
   FunctionDeclaration,
@@ -28,6 +27,8 @@ class GetMemoriesInvocation extends BaseToolInvocation<
   GetMemoriesParams,
   ToolResult
 > {
+  private static recentlyRetrievedMemoryPaths: Set<string> = new Set();
+
   constructor(
     private readonly config: Config,
     params: GetMemoriesParams,
@@ -125,7 +126,12 @@ Use the select_relevant_memories function to return your selection.`;
     const projectRoot = this.config.getProjectRoot();
     const cg = await this.config.getContentGenerator();
 
-    const allFiles = await this.listMemoryFiles(projectRoot);
+    let allFiles = await this.listMemoryFiles(projectRoot);
+
+    // Filter out recently retrieved memories
+    allFiles = allFiles.filter(
+      (file) => !GetMemoriesInvocation.recentlyRetrievedMemoryPaths.has(file),
+    );
 
     if (allFiles.length === 0) {
       const msg = 'No memory files found in ./.gemini/memory';
@@ -173,31 +179,21 @@ Use the select_relevant_memories function to return your selection.`;
       }
     }
 
-    if (!selected || selected.length === 0) {
-      // Fallback heuristic: choose up to 5 most recent files by mtime
-      const stats = await Promise.all(
-        allFiles.map(async (f) => ({
-          f,
-          s: await fs.stat(f).catch(() => null),
-        })),
-      );
-      selected = stats
-        .filter((x): x is { f: string; s: Stats } => !!x.s)
-        .sort((a, b) => b.s.mtimeMs - a.s.mtimeMs)
-        .slice(0, 5)
-        .map((x) => x.f);
-    }
-
     // Ensure selected paths are within project and are txts
     selected = this.sanitizeAndNormalizePaths(selected, projectRoot);
+
+    // Add newly selected memories to the recently retrieved set
+    selected.forEach((file) =>
+      GetMemoriesInvocation.recentlyRetrievedMemoryPaths.add(file),
+    );
 
     const blob = await this.readFilesAsBlob(selected, projectRoot);
     const display = selected.length
       ? `Loaded ${selected.length} memories.\n${blob}`
-      : 'No relevant memories selected.';
+      : 'No relevant memories found';
 
     return {
-      llmContent: blob || 'No relevant memories selected.',
+      llmContent: blob || 'No relevant memories found',
       returnDisplay: display,
     };
   }
