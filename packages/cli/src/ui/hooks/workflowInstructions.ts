@@ -99,7 +99,9 @@ Here are the tools at your disposal:
 ${toolDefinitions}
 
 Now, please address the following request:
+<user_request>
 ${userQuery}
+</user_request>
 
 --
 

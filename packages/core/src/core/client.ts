@@ -155,11 +155,11 @@ export class GeminiClient {
       return 'No tools available.';
     }
 
-    let formattedTools = 'Available Tools:\\n';
+    let formattedTools = 'Available Tools:\n';
     for (const tool of toolDeclarations) {
-      formattedTools += `  - **${tool.name}**: ${tool.description}\\n`;
+      formattedTools += `  - **${tool.name}**: ${tool.description}\n`;
       if (tool.parameters && tool.parameters.properties) {
-        formattedTools += '    Parameters:\\n';
+        formattedTools += '    Parameters:\n';
         for (const [paramName, paramProps] of Object.entries(
           tool.parameters.properties,
         )) {
@@ -171,7 +171,7 @@ export class GeminiClient {
           }${isRequired ? ', required' : ''}): ${
             (paramProps as { description?: string }).description ||
             'No description.'
-          }\\n`;
+          }\n`;
         }
       }
     }
@@ -472,6 +472,8 @@ export class GeminiClient {
       };
       return new Turn(this.getChat(), prompt_id);
     }
+
+    await this.getChat().scrubHistory();
 
     const compressed = await this.tryCompressChat(prompt_id, false);
 
