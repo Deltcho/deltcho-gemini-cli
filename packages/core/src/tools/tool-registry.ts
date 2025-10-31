@@ -182,7 +182,7 @@ export class ToolRegistry {
 
   constructor(config: Config, eventEmitter?: EventEmitter) {
     this.config = config;
-    this.mcpClientManager = new McpClientManager(this, eventEmitter);
+    this.mcpClientManager = new McpClientManager(this, config, eventEmitter);
   }
 
   setMessageBus(messageBus: MessageBus): void {
@@ -245,7 +245,7 @@ export class ToolRegistry {
     await this.discoverAndRegisterToolsFromCommand();
 
     // discover tools using MCP servers, if configured
-    await this.mcpClientManager.discoverAllMcpTools(this.config);
+    await this.mcpClientManager.discoverAllMcpTools();
   }
 
   /**
@@ -260,7 +260,7 @@ export class ToolRegistry {
     this.config.getPromptRegistry().clear();
 
     // discover tools using MCP servers, if configured
-    await this.mcpClientManager.discoverAllMcpTools(this.config);
+    await this.mcpClientManager.discoverAllMcpTools();
   }
 
   /**

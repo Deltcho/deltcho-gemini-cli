@@ -38,7 +38,6 @@ import {
 import { handleFallback } from '../fallback/handler.js';
 import { isFunctionResponse } from '../utils/messageInspectors.js';
 import { partListUnionToString } from './geminiRequest.js';
-import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
 
 export enum StreamEventType {
   /** A regular content chunk from the API. */
@@ -149,6 +148,7 @@ export class GeminiChat {
   // model.
   private sendPromise: Promise<void> = Promise.resolve();
   private readonly chatRecordingService: ChatRecordingService;
+  private lastPromptTokenCount: number;
 
   constructor(
     private readonly config: Config,
@@ -158,6 +158,9 @@ export class GeminiChat {
     validateHistory(history);
     this.chatRecordingService = new ChatRecordingService(config);
     this.chatRecordingService.initialize();
+    this.lastPromptTokenCount = Math.ceil(
+      JSON.stringify(this.history).length / 4,
+    );
   }
 
   /**
@@ -510,9 +513,7 @@ export class GeminiChat {
       if (chunk.usageMetadata) {
         this.chatRecordingService.recordMessageTokens(chunk.usageMetadata);
         if (chunk.usageMetadata.promptTokenCount !== undefined) {
-          uiTelemetryService.setLastPromptTokenCount(
-            chunk.usageMetadata.promptTokenCount,
-          );
+          this.lastPromptTokenCount = chunk.usageMetadata.promptTokenCount;
         }
       }
 
@@ -571,6 +572,10 @@ export class GeminiChat {
     }
 
     this.history.push({ role: 'model', parts: consolidatedParts });
+  }
+
+  getLastPromptTokenCount(): number {
+    return this.lastPromptTokenCount;
   }
 
   /**
