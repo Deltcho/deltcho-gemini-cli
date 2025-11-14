@@ -29,6 +29,8 @@ import {
   READ_FILE_TOOL_NAME,
   READ_MANY_FILES_TOOL_NAME,
   WEB_SEARCH_TOOL_NAME,
+  WEB_FETCH_TOOL_NAME,
+  THINK_TOOL_NAME,
 } from '../tools/tool-names.js';
 import { promptIdContext } from '../utils/promptIdContext.js';
 import {
@@ -669,12 +671,14 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       : undefined;
 
     try {
+      const thinkingBudget = modelConfig.thinkingBudget ?? -1;
+
       const generationConfig: GenerateContentConfig = {
         temperature: modelConfig.temp,
         topP: modelConfig.top_p,
         thinkingConfig: {
-          includeThoughts: true,
-          thinkingBudget: modelConfig.thinkingBudget ?? -1,
+          includeThoughts: thinkingBudget !== 0,
+          thinkingBudget,
         },
       };
 
@@ -1051,6 +1055,9 @@ Important Rules:
       READ_MANY_FILES_TOOL_NAME,
       MEMORY_TOOL_NAME,
       WEB_SEARCH_TOOL_NAME,
+      WEB_FETCH_TOOL_NAME,
+      THINK_TOOL_NAME,
+      'parallel_edit',
     ]);
     for (const tool of toolRegistry.getAllTools()) {
       if (!allowlist.has(tool.name)) {

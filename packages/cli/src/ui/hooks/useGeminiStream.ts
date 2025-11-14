@@ -458,7 +458,11 @@ export const useGeminiStream = (
         } else {
           // Normal query for Gemini
           const finalQuery = await getWorkflowInstructions(
-            geminiClient.getFormattedToolDefinitions(),
+            JSON.stringify(
+              config.getToolRegistry().getFunctionDeclarations(),
+              null,
+              2,
+            ),
             effectiveQuery,
             selectedPromptName,
           );
@@ -490,7 +494,6 @@ export const useGeminiStream = (
       logger,
       shellModeActive,
       scheduleToolCalls,
-      geminiClient,
     ],
   );
 

@@ -14,12 +14,17 @@ import type { AgentInputs } from './types.js';
  * @returns The populated string with all placeholders replaced.
  * @throws {Error} if any placeholder key is not found in the inputs.
  */
-export function templateString(template: string, inputs: AgentInputs): string {
+export function templateString(
+  template: string | ((inputs: AgentInputs) => string),
+  inputs: AgentInputs,
+): string {
   const placeholderRegex = /\$\{(\w+)\}/g;
+  const templateContent =
+    typeof template === 'function' ? template(inputs) : template;
 
   // First, find all unique keys required by the template.
   const requiredKeys = new Set(
-    Array.from(template.matchAll(placeholderRegex), (match) => match[1]),
+    Array.from(templateContent.matchAll(placeholderRegex), (match) => match[1]),
   );
 
   // Check if all required keys exist in the inputs.
@@ -37,7 +42,7 @@ export function templateString(template: string, inputs: AgentInputs): string {
   }
 
   // Perform the replacement using a replacer function.
-  return template.replace(placeholderRegex, (_match, key) =>
+  return templateContent.replace(placeholderRegex, (_match, key) =>
     String(inputs[key]),
   );
 }

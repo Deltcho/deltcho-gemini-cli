@@ -95,8 +95,8 @@ export class SubagentInvocation<
       };
 
       // Apply subagent model overrides if provided in runtime config
-      const overrideModel = this.config.getSubagentModel?.();
-      const overrideThinking = this.config.getSubagentThinkingBudget?.();
+      const overrideModel = this.config.getAgentModel();
+      const overrideThinking = this.config.getAgentThinkingBudget();
       const overriddenDefinition = {
         ...this.definition,
         modelConfig: {

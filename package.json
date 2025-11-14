@@ -1,5 +1,5 @@
 {
-  "name": "@google/gemini-cli",
+  "name": "gemini-deltcho",
   "version": "0.17.0-nightly.20251114.0fcbff506",
   "engines": {
     "node": ">=20.0.0"
@@ -69,7 +69,7 @@
     }
   },
   "bin": {
-    "gemini": "bundle/gemini.js"
+    "gemini-deltcho": "bundle/gemini.js"
   },
   "files": [
     "bundle/",
@@ -135,7 +135,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "prettier --write",
-      "eslint --fix --max-warnings 0 --no-warn-ignored"
+      "eslint --fix --max-warnings 0 --no-ignore"
     ],
     "eslint.config.js": [
       "prettier --write"

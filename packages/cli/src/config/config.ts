@@ -71,6 +71,9 @@ export interface CliArgs {
   outputFormat: string | undefined;
   fakeResponses: string | undefined;
   recordResponses: string | undefined;
+  thinkingBudget: number | undefined;
+  subagentModel: string | undefined;
+  subagentThinkingBudget: number | undefined;
 }
 
 export async function parseArguments(settings: Settings): Promise<CliArgs> {

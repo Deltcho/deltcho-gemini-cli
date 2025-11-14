@@ -528,8 +528,8 @@ export class Config {
       (hooksNeedMessageBus ? true : false);
     this.codebaseInvestigatorSettings = {
       enabled: params.codebaseInvestigatorSettings?.enabled ?? true,
-      maxNumTurns: params.codebaseInvestigatorSettings?.maxNumTurns ?? 10,
-      maxTimeMinutes: params.codebaseInvestigatorSettings?.maxTimeMinutes ?? 3,
+      maxNumTurns: params.codebaseInvestigatorSettings?.maxNumTurns ?? 100,
+      maxTimeMinutes: params.codebaseInvestigatorSettings?.maxTimeMinutes ?? 5,
       thinkingBudget:
         params.codebaseInvestigatorSettings?.thinkingBudget ??
         DEFAULT_THINKING_MODE,
@@ -1297,6 +1297,14 @@ export class Config {
     return this.codebaseInvestigatorSettings;
   }
 
+  getAgentModel(): string | undefined {
+    return this.codebaseInvestigatorSettings.model;
+  }
+
+  getAgentThinkingBudget(): number | undefined {
+    return this.codebaseInvestigatorSettings.thinkingBudget;
+  }
+
   async createToolRegistry(): Promise<ToolRegistry> {
     const registry = new ToolRegistry(this);
 
@@ -1376,7 +1384,7 @@ export class Config {
     }
 
     // Register Subagents as Tools
-    if (this.getCodebaseInvestigatorSettings().enabled) {
+    if (this.codebaseInvestigatorSettings.enabled) {
       const definition = this.agentRegistry.getDefinition(
         'codebase_investigator',
       );

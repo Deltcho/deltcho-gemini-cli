@@ -10,7 +10,8 @@ import fs from 'node:fs/promises';
 import type { Part } from '@google/genai';
 import type { ToolInvocation, ToolResult } from './tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
-import type { Config } from '../config/config.js';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { Config } from '../config/config.js';
 import { DEFAULT_GEMINI_MODEL, getEffectiveModel } from '../config/models.js';
 import { AgentExecutor } from '../agents/executor.js';
 import type { AgentDefinition, AgentInputs } from '../agents/types.js';
@@ -127,7 +128,7 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
       {
         model: getEffectiveModel(
           this.config.isInFallbackMode(),
-          this.config.getSubagentModel?.() || DEFAULT_GEMINI_MODEL,
+          this.config.getAgentModel() || DEFAULT_GEMINI_MODEL,
         ),
         contents: [{ role: 'user', parts: [{ text: instruction }] }],
         config: { temperature: 0.2, topP: 0.95 },
@@ -213,14 +214,11 @@ Upon completion of your solution planning, you must call the \`complete_task\` t
       modelConfig: {
         model: getEffectiveModel(
           this.config.isInFallbackMode(),
-          this.config.getSubagentModel?.() || DEFAULT_GEMINI_MODEL,
+          this.config.getAgentModel() || DEFAULT_GEMINI_MODEL,
         ),
         temp: 0.2,
         top_p: 0.95,
-        thinkingBudget:
-          this.config.getSubagentThinkingBudget?.() ??
-          this.config.getThinkingBudget?.() ??
-          -1,
+        thinkingBudget: this.config.getAgentThinkingBudget() ?? -1,
       },
       runConfig: {
         max_time_minutes: 10,
