@@ -11,7 +11,6 @@ import {
   EDIT_TOOL_NAME,
   GLOB_TOOL_NAME,
   GREP_TOOL_NAME,
-  MEMORY_TOOL_NAME,
   READ_FILE_TOOL_NAME,
   READ_MANY_FILES_TOOL_NAME,
   SHELL_TOOL_NAME,
@@ -219,7 +218,6 @@ ${(function () {
     return `- **Interactive Commands:** Prefer non-interactive commands when it makes sense; however, some commands are only interactive and expect user input during their execution (e.g. ssh, vim). If you choose to execute an interactive command consider letting the user know they can press \`ctrl + f\` to focus into the shell to provide input.`;
   }
 })()}
-- **Remembering Facts:** Use the '${MEMORY_TOOL_NAME}' tool to remember specific, *user-related* facts or preferences when the user explicitly asks, or when they state a clear, concise piece of information that would help personalize or streamline *your future interactions with them* (e.g., preferred coding style, common project paths they use, personal tool aliases). This tool is for user-specific information that should persist across sessions. Do *not* use it for general project context or information. If unsure whether to save something, you can ask the user, "Should I remember that for you?"
 - **Interactive Commands:** Try to avoid shell commands that are likely to require user interaction (e.g. \`git rebase -i\`). Use non-interactive versions of commands (e.g. \`npm init -y\` instead of \`npm init\`) when available, and otherwise remind the user that interactive shell commands are not supported and may cause hangs until canceled by the user.
 - **Remembering Facts:** Use the 'record_memories' tool to remember specific, *user-related* facts or preferences when the user explicitly asks, or when they state a clear, concise piece of information that would help personalize or streamline *your future interactions with them* (e.g., preferred coding style, common project paths they use, personal tool aliases). This tool is for user-specific information that should persist across sessions. Do *not* use it for general project context or information. If unsure whether to save something, you can ask the user, "Should I remember that for you?"
 - **Internal Reasoning:** Use the '${THINK_TOOL_NAME}' tool to articulate a clear plan of action after analyzing the user's query. The thought should outline the steps the model will take to fulfill the user's request. This tool is useful for complex internal reasoning, especially when you encounter unexpected errors, ambiguous situations, or need to formulate a multi-step plan. This helps you organize your thoughts and improves the quality of your next action.
