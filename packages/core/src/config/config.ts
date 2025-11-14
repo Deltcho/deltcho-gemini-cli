@@ -305,6 +305,9 @@ export interface ConfigParameters {
   hooks?: {
     [K in HookEventName]?: HookDefinition[];
   };
+  thinkingBudget?: number;
+  subagentModel?: string;
+  subagentThinkingBudget?: number;
 }
 
 export class Config {

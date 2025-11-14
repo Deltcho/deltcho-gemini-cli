@@ -356,6 +356,7 @@ export async function processSingleFileContent(
   fileSystemService: FileSystemService,
   offset?: number,
   limit?: number,
+  addLineNumbers: boolean = true,
 ): Promise<ProcessedFileReadResult> {
   try {
     if (!fs.existsSync(filePath)) {
@@ -433,7 +434,7 @@ export async function processSingleFileContent(
         let linesWereTruncatedInLength = false;
         const formattedLines = selectedLines.map((line, index) => {
           const lineNumber = actualStartLine + index + 1;
-          const lineNumberPrefix = `[${lineNumber}] `;
+          const lineNumberPrefix = addLineNumbers ? `[${lineNumber}] ` : '';
           let processedLine = line;
 
           if (line.length > MAX_LINE_LENGTH_TEXT_FILE) {

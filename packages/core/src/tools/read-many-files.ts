@@ -279,6 +279,9 @@ ${finalExclusionPatternsForDescription
             filePath,
             this.config.getTargetDir(),
             this.config.getFileSystemService(),
+            undefined, // offset
+            undefined, // limit
+            false, // Do not add line numbers for ReadManyFilesTool
           );
 
           if (fileReadResult.error) {

@@ -103,6 +103,27 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
           nargs: 1,
           description: `Model`,
         })
+        .option('thinking-budget', {
+          alias: 't',
+          type: 'number',
+          nargs: 1,
+          description:
+            'Thinking budget (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
+        })
+        .option('subagent-model', {
+          alias: 'sam',
+          type: 'string',
+          nargs: 1,
+          description:
+            'Model to use for all subagents (e.g., codebase investigator, delegate tasks)',
+        })
+        .option('subagent-thinking-budget', {
+          alias: 'sat',
+          type: 'number',
+          nargs: 1,
+          description:
+            'Thinking budget for all subagents (e.g., -1 for dynamic, 0 for off, >0 for fixed budget)',
+        })
         .option('prompt', {
           alias: 'p',
           type: 'string',
@@ -653,8 +674,11 @@ export async function loadCliConfig(
     },
     useModelRouter,
     enableMessageBusIntegration,
-    codebaseInvestigatorSettings:
-      settings.experimental?.codebaseInvestigatorSettings,
+    codebaseInvestigatorSettings: {
+      ...settings.experimental?.codebaseInvestigatorSettings,
+      model: argv.subagentModel,
+      thinkingBudget: argv.subagentThinkingBudget,
+    },
     fakeResponses: argv.fakeResponses,
     recordResponses: argv.recordResponses,
     retryFetchErrors: settings.general?.retryFetchErrors ?? false,
@@ -663,6 +687,9 @@ export async function loadCliConfig(
     // TODO: loading of hooks based on workspace trust
     enableHooks: settings.tools?.enableHooks ?? false,
     hooks: settings.hooks || {},
+    thinkingBudget: argv.thinkingBudget,
+    subagentModel: argv.subagentModel,
+    subagentThinkingBudget: argv.subagentThinkingBudget,
   });
 }
 
