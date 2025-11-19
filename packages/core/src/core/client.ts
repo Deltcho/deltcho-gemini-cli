@@ -461,6 +461,8 @@ export class GeminiClient {
       return new Turn(this.getChat(), prompt_id);
     }
 
+    await this.getChat().scrubHistory();
+
     const compressed = await this.tryCompressChat(prompt_id, false);
 
     if (compressed.compressionStatus === CompressionStatus.COMPRESSED) {
