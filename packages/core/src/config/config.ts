@@ -30,6 +30,7 @@ import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
 import { WebSearchTool } from '../tools/web-search.js';
+import { ThinkTool } from '../tools/think.js';
 import { GeminiClient } from '../core/client.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import type { HookDefinition, HookEventName } from '../hooks/types.js';
@@ -1479,6 +1480,49 @@ export class Config {
     registerCoreTool(WebSearchTool, this);
     if (this.getUseWriteTodos()) {
       registerCoreTool(WriteTodosTool, this);
+    }
+
+    registerCoreTool(ThinkTool, this);
+
+    // Register Get/Record Memories tools
+    try {
+      const { GetMemoriesTool } = await import('../tools/get-memories.js');
+      registerCoreTool(GetMemoriesTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register GetMemoriesTool:', err);
+      }
+    }
+
+    try {
+      const { RecordMemoriesTool } = await import(
+        '../tools/record-memories.js'
+      );
+      registerCoreTool(RecordMemoriesTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register RecordMemoriesTool:', err);
+      }
+    }
+
+    // Register Delegate Task tool
+    try {
+      const { DelegateTaskTool } = await import('../tools/delegate-task.js');
+      registerCoreTool(DelegateTaskTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register DelegateTaskTool:', err);
+      }
+    }
+
+    // Register Delegate Task tool
+    try {
+      const { DelegateTaskTool } = await import('../tools/delegate-task.js');
+      registerCoreTool(DelegateTaskTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register DelegateTaskTool:', err);
+      }
     }
 
     // Register Subagents as Tools
