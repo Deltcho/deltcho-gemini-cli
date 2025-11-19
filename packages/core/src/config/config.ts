@@ -50,6 +50,7 @@ import {
   DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_MODEL_AUTO,
   DEFAULT_THINKING_MODE,
+  getEffectiveModel,
 } from './models.js';
 import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
 import type { MCPOAuthConfig } from '../mcp/oauth-provider.js';
@@ -329,6 +330,9 @@ export class Config {
   private readonly debugMode: boolean;
   private readonly question: string | undefined;
 
+  private readonly subagentModel: string | undefined;
+  private readonly subagentThinkingBudget: number | undefined;
+
   private readonly coreTools: string[] | undefined;
   private readonly allowedTools: string[] | undefined;
   private readonly excludeTools: string[] | undefined;
@@ -414,6 +418,7 @@ export class Config {
   readonly fakeResponses?: string;
   readonly recordResponses?: string;
   private readonly disableYoloMode: boolean;
+  private readonly thinkingBudget: number;
   private readonly enableHooks: boolean;
   private readonly hooks:
     | { [K in HookEventName]?: HookDefinition[] }
@@ -434,6 +439,10 @@ export class Config {
     );
     this.debugMode = params.debugMode;
     this.question = params.question;
+
+    // Subagent overrides (applies to all subagents if provided)
+    this.subagentModel = params.subagentModel;
+    this.subagentThinkingBudget = params.subagentThinkingBudget;
 
     this.coreTools = params.coreTools;
     this.allowedTools = params.allowedTools;
@@ -536,7 +545,10 @@ export class Config {
       thinkingBudget:
         params.codebaseInvestigatorSettings?.thinkingBudget ??
         DEFAULT_THINKING_MODE,
-      model: params.codebaseInvestigatorSettings?.model ?? DEFAULT_GEMINI_MODEL,
+      model: getEffectiveModel(
+        this.isInFallbackMode(),
+        params.codebaseInvestigatorSettings?.model ?? DEFAULT_GEMINI_MODEL,
+      ),
     };
     this.continueOnFailedApiCall = params.continueOnFailedApiCall ?? true;
     this.enableShellOutputEfficiency =
@@ -556,6 +568,10 @@ export class Config {
     };
     this.retryFetchErrors = params.retryFetchErrors ?? false;
     this.disableYoloMode = params.disableYoloMode ?? false;
+    this.thinkingBudget = params.thinkingBudget ?? DEFAULT_THINKING_MODE;
+    this.subagentModel = params.subagentModel;
+    this.subagentThinkingBudget = params.subagentThinkingBudget;
+
     this.hooks = params.hooks;
     this.experiments = params.experiments;
 
@@ -600,6 +616,16 @@ export class Config {
     this.modelConfigService = new ModelConfigService(
       modelConfigServiceConfig ?? DEFAULT_MODEL_CONFIGS,
     );
+  }
+  getThinkingBudget(): number {
+    return this.thinkingBudget;
+  }
+  getSubagentModel(): string | undefined {
+    return this.subagentModel;
+  }
+
+  getSubagentThinkingBudget(): number | undefined {
+    return this.subagentThinkingBudget;
   }
 
   /**
