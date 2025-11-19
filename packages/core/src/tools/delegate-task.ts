@@ -129,6 +129,7 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
         model: getEffectiveModel(
           this.config.isInFallbackMode(),
           this.config.getAgentModel() || DEFAULT_GEMINI_MODEL,
+          this.config.getPreviewFeatures(),
         ),
         contents: [{ role: 'user', parts: [{ text: instruction }] }],
         config: { temperature: 0.2, topP: 0.95 },
@@ -215,6 +216,7 @@ Upon completion of your solution planning, you must call the \`complete_task\` t
         model: getEffectiveModel(
           this.config.isInFallbackMode(),
           this.config.getAgentModel() || DEFAULT_GEMINI_MODEL,
+          this.config.getPreviewFeatures(),
         ),
         temp: 0.2,
         top_p: 0.95,
