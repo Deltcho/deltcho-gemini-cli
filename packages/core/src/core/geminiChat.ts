@@ -511,6 +511,32 @@ export class GeminiChat {
     });
   }
 
+  async scrubHistory() {
+    const newHistory: Content[] = [];
+    const userRequestRegex = /<user_request>([\s\S]*)<\/user_request>/;
+    for (const content of this.history) {
+      if (content.role === 'user') {
+        if (content.parts) {
+          const newParts = content.parts.map((part) => {
+            if (part.text) {
+              const match = part.text.match(userRequestRegex);
+              if (match) {
+                return { ...part, text: match[1].trim() };
+              }
+            }
+            return part;
+          });
+          newHistory.push({ ...content, parts: newParts });
+        } else {
+          newHistory.push(content);
+        }
+      } else {
+        newHistory.push(content);
+      }
+    }
+    this.history = newHistory;
+  }
+
   // To ensure our requests validate, the first function call in every model
   // turn within the active loop must have a `thoughtSignature` property.
   // If we do not do this, we will get back 400 errors from the API.

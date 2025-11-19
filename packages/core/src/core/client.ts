@@ -34,7 +34,6 @@ import type { ContentGenerator } from './contentGenerator.js';
 import {
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL_AUTO,
-  DEFAULT_THINKING_MODE,
   getEffectiveModel,
 } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
@@ -202,11 +201,13 @@ export class GeminiClient {
       const model = this.config.getModel();
 
       const config: GenerateContentConfig = { ...this.generateContentConfig };
+      const thinkingBudget = this.config.getThinkingBudget();
+      const shouldIncludeThoughts = thinkingBudget !== 0;
 
       if (isThinkingSupported(model)) {
         config.thinkingConfig = {
-          includeThoughts: true,
-          thinkingBudget: DEFAULT_THINKING_MODE,
+          includeThoughts: shouldIncludeThoughts,
+          thinkingBudget,
         };
       }
 
@@ -455,6 +456,8 @@ export class GeminiClient {
       };
       return new Turn(this.getChat(), prompt_id);
     }
+
+    await this.getChat().scrubHistory();
 
     const compressed = await this.tryCompressChat(prompt_id, false);
 
