@@ -30,6 +30,7 @@ import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
 import { WebSearchTool } from '../tools/web-search.js';
+import { ThinkTool } from '../tools/think.js';
 import { GeminiClient } from '../core/client.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import type { HookDefinition, HookEventName } from '../hooks/types.js';
@@ -543,6 +544,7 @@ export class Config {
       maxNumTurns: params.codebaseInvestigatorSettings?.maxNumTurns ?? 100,
       maxTimeMinutes: params.codebaseInvestigatorSettings?.maxTimeMinutes ?? 5,
       thinkingBudget:
+        params.subagentThinkingBudget ??
         params.codebaseInvestigatorSettings?.thinkingBudget ??
         DEFAULT_THINKING_MODE,
       model: getEffectiveModel(
@@ -1410,6 +1412,29 @@ export class Config {
     registerCoreTool(WebSearchTool, this);
     if (this.getUseWriteTodos()) {
       registerCoreTool(WriteTodosTool, this);
+    }
+
+    registerCoreTool(ThinkTool, this);
+
+    // Register Get/Record Memories tools
+    try {
+      const { GetMemoriesTool } = await import('../tools/get-memories.js');
+      registerCoreTool(GetMemoriesTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register GetMemoriesTool:', err);
+      }
+    }
+
+    try {
+      const { RecordMemoriesTool } = await import(
+        '../tools/record-memories.js'
+      );
+      registerCoreTool(RecordMemoriesTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register RecordMemoriesTool:', err);
+      }
     }
 
     // Register Subagents as Tools
