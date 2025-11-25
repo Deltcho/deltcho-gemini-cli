@@ -12,7 +12,7 @@ import type { ToolInvocation, ToolResult } from './tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { Config } from '../config/config.js';
-import { DEFAULT_GEMINI_MODEL, getEffectiveModel } from '../config/models.js';
+import { getEffectiveModel } from '../config/models.js';
 import { AgentExecutor } from '../agents/executor.js';
 import type { AgentDefinition, AgentInputs } from '../agents/types.js';
 import { LSTool } from './ls.js';
@@ -128,7 +128,7 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
       {
         model: getEffectiveModel(
           this.config.isInFallbackMode(),
-          DEFAULT_GEMINI_MODEL,
+          this.config.getSubagentModel(),
           this.config.getPreviewFeatures(),
         ),
         contents: [{ role: 'user', parts: [{ text: instruction }] }],
@@ -213,7 +213,8 @@ Upon completion of your solution planning, you must call the \`complete_task\` t
           }\n\nUser Request:\n${inputs['userRequest'] as string}`,
       },
       modelConfig: {
-        model: DEFAULT_GEMINI_MODEL,
+        model: this.config.getSubagentModel(),
+        thinkingBudget: this.config.getSubagentThinkingBudget(),
         temp: 0.2,
         top_p: 0.95,
       },
