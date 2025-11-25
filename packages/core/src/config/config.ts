@@ -331,8 +331,8 @@ export class Config {
   private readonly debugMode: boolean;
   private readonly question: string | undefined;
 
-  private readonly subagentModel: string;
-  private readonly subagentThinkingBudget: number;
+  private readonly subagentModel: string | undefined;
+  private readonly subagentThinkingBudget: number | undefined;
 
   private readonly coreTools: string[] | undefined;
   private readonly allowedTools: string[] | undefined;
@@ -445,7 +445,7 @@ export class Config {
     this.question = params.question;
     this.thinkingBudget = params.thinkingBudget;
     // Subagent overrides (applies to all subagents if provided)
-    this.subagentModel = params.subagentModel ?? DEFAULT_GEMINI_MODEL;
+    this.subagentModel = params.subagentModel;
     this.subagentThinkingBudget =
       params.subagentThinkingBudget ?? DEFAULT_THINKING_MODE;
 
@@ -570,10 +570,9 @@ export class Config {
     };
     this.retryFetchErrors = params.retryFetchErrors ?? false;
     this.disableYoloMode = params.disableYoloMode ?? false;
-    this.thinkingBudget = params.thinkingBudget ?? DEFAULT_THINKING_MODE;
+    this.thinkingBudget = params.thinkingBudget;
     this.subagentModel = params.subagentModel ?? DEFAULT_GEMINI_MODEL;
-    this.subagentThinkingBudget =
-      params.subagentThinkingBudget ?? DEFAULT_THINKING_MODE;
+    this.subagentThinkingBudget = params.subagentThinkingBudget;
 
     this.hooks = params.hooks;
     this.experiments = params.experiments;
@@ -644,11 +643,11 @@ export class Config {
     return this.thinkingBudget ?? DEFAULT_THINKING_MODE;
   }
   getSubagentModel(): string {
-    return this.subagentModel;
+    return this.subagentModel ?? DEFAULT_GEMINI_MODEL;
   }
 
   getSubagentThinkingBudget(): number {
-    return this.subagentThinkingBudget;
+    return this.subagentThinkingBudget ?? DEFAULT_THINKING_MODE;
   }
 
   /**
