@@ -153,9 +153,12 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
       },
     };
     const agentModelAliasName = `agent-${definition.name}-model`;
-    runtimeContext.modelConfigService.registerRuntimeModelConfig(agentModelAliasName, {
-      modelConfig: agentModelConfig,
-    });
+    runtimeContext.modelConfigService.registerRuntimeModelConfig(
+      agentModelAliasName,
+      {
+        modelConfig: agentModelConfig,
+      },
+    );
 
     return new AgentExecutor(
       definition,

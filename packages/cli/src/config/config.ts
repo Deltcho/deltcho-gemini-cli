@@ -687,11 +687,21 @@ export async function loadCliConfig(
     },
     enableMessageBusIntegration,
     codebaseInvestigatorSettings: {
-      enabled: settings.experimental?.codebaseInvestigatorSettings?.enabled ?? true,
-      maxNumTurns: settings.experimental?.codebaseInvestigatorSettings?.maxNumTurns ?? 10,
-      maxTimeMinutes: settings.experimental?.codebaseInvestigatorSettings?.maxTimeMinutes ?? 3,
-      model: argv.subagentModel ?? settings.experimental?.codebaseInvestigatorSettings?.model ?? DEFAULT_GEMINI_MODEL,
-      thinkingBudget: argv.subagentThinkingBudget ?? settings.experimental?.codebaseInvestigatorSettings?.thinkingBudget ?? DEFAULT_THINKING_MODE,
+      enabled:
+        settings.experimental?.codebaseInvestigatorSettings?.enabled ?? true,
+      maxNumTurns:
+        settings.experimental?.codebaseInvestigatorSettings?.maxNumTurns ?? 10,
+      maxTimeMinutes:
+        settings.experimental?.codebaseInvestigatorSettings?.maxTimeMinutes ??
+        3,
+      model:
+        argv.subagentModel ??
+        settings.experimental?.codebaseInvestigatorSettings?.model ??
+        DEFAULT_GEMINI_MODEL,
+      thinkingBudget:
+        argv.subagentThinkingBudget ??
+        settings.experimental?.codebaseInvestigatorSettings?.thinkingBudget ??
+        DEFAULT_THINKING_MODE,
     },
     fakeResponses: argv.fakeResponses,
     recordResponses: argv.recordResponses,

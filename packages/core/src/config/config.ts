@@ -608,32 +608,38 @@ export class Config {
     this.thinkingBudget = params.thinkingBudget;
 
     if (this.thinkingBudget !== undefined) {
-      this.modelConfigService.registerRuntimeModelConfig('main_model_override', {
-        modelConfig: {
-          generateContentConfig: {
-            thinkingConfig: {
-              includeThoughts: this.thinkingBudget !== 0,
-              thinkingBudget: this.thinkingBudget,
+      this.modelConfigService.registerRuntimeModelConfig(
+        'main_model_override',
+        {
+          modelConfig: {
+            generateContentConfig: {
+              thinkingConfig: {
+                includeThoughts: this.thinkingBudget !== 0,
+                thinkingBudget: this.thinkingBudget,
+              },
             },
           },
+          extends: this.model,
         },
-        extends: this.model,
-      });
+      );
       this.model = 'main_model_override';
     }
 
     if (this.thinkingBudget !== undefined) {
-      this.modelConfigService.registerRuntimeModelConfig('main_model_override', {
-        modelConfig: {
-          generateContentConfig: {
-            thinkingConfig: {
-              includeThoughts: this.thinkingBudget !== 0,
-              thinkingBudget: this.thinkingBudget,
+      this.modelConfigService.registerRuntimeModelConfig(
+        'main_model_override',
+        {
+          modelConfig: {
+            generateContentConfig: {
+              thinkingConfig: {
+                includeThoughts: this.thinkingBudget !== 0,
+                thinkingBudget: this.thinkingBudget,
+              },
             },
           },
+          extends: this.model,
         },
-        extends: this.model,
-      });
+      );
       this.model = 'main_model_override';
     }
   }
