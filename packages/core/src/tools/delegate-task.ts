@@ -128,7 +128,7 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
       {
         model: getEffectiveModel(
           this.config.isInFallbackMode(),
-          this.config.getAgentModel() || DEFAULT_GEMINI_MODEL,
+          DEFAULT_GEMINI_MODEL,
           this.config.getPreviewFeatures(),
         ),
         contents: [{ role: 'user', parts: [{ text: instruction }] }],
@@ -213,14 +213,9 @@ Upon completion of your solution planning, you must call the \`complete_task\` t
           }\n\nUser Request:\n${inputs['userRequest'] as string}`,
       },
       modelConfig: {
-        model: getEffectiveModel(
-          this.config.isInFallbackMode(),
-          this.config.getAgentModel() || DEFAULT_GEMINI_MODEL,
-          this.config.getPreviewFeatures(),
-        ),
+        model: DEFAULT_GEMINI_MODEL,
         temp: 0.2,
         top_p: 0.95,
-        thinkingBudget: this.config.getAgentThinkingBudget() ?? -1,
       },
       runConfig: {
         max_time_minutes: 10,

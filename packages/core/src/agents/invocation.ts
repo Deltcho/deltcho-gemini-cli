@@ -94,23 +94,8 @@ export class SubagentInvocation<
         }
       };
 
-      // Apply subagent model overrides if provided in runtime config
-      const overrideModel = this.config.getAgentModel();
-      const overrideThinking = this.config.getAgentThinkingBudget();
-      const overriddenDefinition = {
-        ...this.definition,
-        modelConfig: {
-          ...this.definition.modelConfig,
-          model: overrideModel || this.definition.modelConfig.model,
-          thinkingBudget:
-            overrideThinking !== undefined
-              ? overrideThinking
-              : this.definition.modelConfig.thinkingBudget,
-        },
-      } as typeof this.definition;
-
       const executor = await AgentExecutor.create(
-        overriddenDefinition,
+        this.definition, // Use the original definition directly
         this.config,
         onActivity,
       );

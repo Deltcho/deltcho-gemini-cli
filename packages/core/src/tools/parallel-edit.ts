@@ -155,7 +155,6 @@ ${fileContent}
           // Handle updates if needed
         },
         getPreferredEditor: () => undefined,
-        onEditorClose: () => {},
       });
 
       await scheduler.schedule(toolCallRequests, abortController.signal);

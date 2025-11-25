@@ -13,20 +13,23 @@ import importPlugin from 'eslint-plugin-import';
 import vitest from '@vitest/eslint-plugin';
 import globals from 'globals';
 import licenseHeader from 'eslint-plugin-license-header';
+import path from 'node:path';
+import url from 'node:url';
 
-
-
+// --- ESM way to get __dirname ---
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// --- ---
 
 // Determine the monorepo root (assuming eslint.config.js is at the root)
-
+const projectRoot = __dirname;
 
 export default tseslint.config(
   {
     // Global ignores
     ignores: [
       'node_modules/*',
-      '.integration-tests/**',
-      // 'eslint.config.js',
+      'eslint.config.js',
       'packages/**/dist/**',
       'bundle/**',
       'package/bundle/**',
@@ -84,8 +87,8 @@ export default tseslint.config(
     },
     rules: {
       // General Best Practice Rules (subset adapted for flat config)
-      // '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
-      // 'arrow-body-style': ['error', 'as-needed'],
+      '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
+      'arrow-body-style': ['error', 'as-needed'],
       curly: ['error', 'multi-line'],
       eqeqeq: ['error', 'always', { null: 'ignore' }],
       '@typescript-eslint/consistent-type-assertions': [

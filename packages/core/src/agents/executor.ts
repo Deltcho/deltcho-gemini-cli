@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { ModelConfig } from '../services/modelConfigService.js';
 import type { Config } from '../config/config.js';
 import { reportError } from '../utils/errorReporting.js';
 import { GeminiChat, StreamEventType } from '../core/geminiChat.js';
@@ -139,11 +140,29 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
     // Get the parent prompt ID from context
     const parentPromptId = promptIdContext.getStore();
 
+    // Create and register a runtime model config alias for this agent
+    const agentModelConfig: ModelConfig = {
+      model: definition.modelConfig.model,
+      generateContentConfig: {
+        temperature: definition.modelConfig.temp,
+        topP: definition.modelConfig.top_p,
+        thinkingConfig: {
+          includeThoughts: (definition.modelConfig.thinkingBudget ?? -1) !== 0,
+          thinkingBudget: definition.modelConfig.thinkingBudget,
+        },
+      },
+    };
+    const agentModelAliasName = `agent-${definition.name}-model`;
+    runtimeContext.modelConfigService.registerRuntimeModelConfig(agentModelAliasName, {
+      modelConfig: agentModelConfig,
+    });
+
     return new AgentExecutor(
       definition,
       runtimeContext,
       agentToolRegistry,
       parentPromptId,
+      agentModelAliasName,
       onActivity,
     );
   }
@@ -159,6 +178,7 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
     runtimeContext: Config,
     toolRegistry: ToolRegistry,
     parentPromptId: string | undefined,
+    private readonly agentModelConfigAlias: string,
     onActivity?: ActivityCallback,
   ) {
     this.definition = definition;
@@ -597,18 +617,11 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
     signal: AbortSignal,
     promptId: string,
   ): Promise<{ functionCalls: FunctionCall[]; textResponse: string }> {
-    const messageParams = {
-      message: message.parts || [],
-      config: {
-        abortSignal: signal,
-        tools: tools.length > 0 ? [{ functionDeclarations: tools }] : undefined,
-      },
-    };
-
     const responseStream = await chat.sendMessageStream(
-      this.definition.modelConfig.model,
-      messageParams,
+      { model: this.agentModelConfigAlias, overrideScope: 'agent' },
+      message.parts || [], // Use message.parts from the currentMessage parameter
       promptId,
+      signal, // Use the signal parameter passed to callModel
     );
 
     const functionCalls: FunctionCall[] = [];
@@ -688,7 +701,8 @@ export class AgentExecutor<TOutput extends z.ZodTypeAny> {
 
       return new GeminiChat(
         this.runtimeContext,
-        generationConfig,
+        systemInstruction ?? '', // Pass the calculated systemInstruction
+        [{ functionDeclarations: this.prepareToolsList() }],
         startHistory,
       );
     } catch (error) {
