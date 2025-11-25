@@ -33,6 +33,7 @@ import type {
 import type { ContentGenerator } from './contentGenerator.js';
 import {
   DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_MODEL_AUTO,
   getEffectiveModel,
 } from '../config/models.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
@@ -56,6 +57,14 @@ import { handleFallback } from '../fallback/handler.js';
 import type { RoutingContext } from '../routing/routingStrategy.js';
 import { debugLogger } from '../utils/debugLogger.js';
 import type { ModelConfigKey } from '../services/modelConfigService.js';
+
+export function isThinkingSupported(model: string) {
+  return (
+    model.startsWith('gemini-2.5') ||
+    model.startsWith('gemini-3') ||
+    model === DEFAULT_GEMINI_MODEL_AUTO
+  );
+}
 
 const MAX_TURNS = 100;
 
@@ -99,6 +108,11 @@ function estimateTextOnlyLength(request: PartListUnion): number {
 
 export class GeminiClient {
   private chat?: GeminiChat;
+  private readonly generateContentConfig: GenerateContentConfig = {
+    temperature: 1,
+    topP: 0.95,
+    topK: 64,
+  };
   private sessionTurnCount = 0;
 
   private readonly loopDetector: LoopDetectionService;
@@ -236,6 +250,19 @@ export class GeminiClient {
     try {
       const userMemory = this.config.getUserMemory();
       const systemInstruction = getCoreSystemPrompt(this.config, userMemory);
+      const model = this.config.getModel();
+
+      const config: GenerateContentConfig = { ...this.generateContentConfig };
+      const thinkingBudget = this.config.getThinkingBudget();
+      const shouldIncludeThoughts = thinkingBudget !== 0;
+
+      if (isThinkingSupported(model)) {
+        config.thinkingConfig = {
+          includeThoughts: shouldIncludeThoughts,
+          thinkingBudget,
+        };
+      }
+
       return new GeminiChat(
         this.config,
         systemInstruction,
@@ -510,6 +537,8 @@ export class GeminiClient {
       };
       return new Turn(this.getChat(), prompt_id);
     }
+
+    await this.getChat().scrubHistory();
 
     const compressed = await this.tryCompressChat(prompt_id, false);
 

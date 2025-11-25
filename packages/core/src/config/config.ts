@@ -30,6 +30,7 @@ import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
 import { WebSearchTool } from '../tools/web-search.js';
+import { ThinkTool } from '../tools/think.js';
 import { GeminiClient } from '../core/client.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import type { HookDefinition, HookEventName } from '../hooks/types.js';
@@ -304,6 +305,8 @@ export interface ConfigParameters {
   hooks?: {
     [K in HookEventName]?: HookDefinition[];
   };
+  subagentModel?: string;
+  subagentThinkingBudget?: number;
   previewFeatures?: boolean;
   enableModelAvailabilityService?: boolean;
   thinkingBudget?: number;
@@ -327,6 +330,9 @@ export class Config {
   private workspaceContext: WorkspaceContext;
   private readonly debugMode: boolean;
   private readonly question: string | undefined;
+
+  private readonly subagentModel: string | undefined;
+  private readonly subagentThinkingBudget: number | undefined;
 
   private readonly coreTools: string[] | undefined;
   private readonly allowedTools: string[] | undefined;
@@ -438,6 +444,9 @@ export class Config {
     this.debugMode = params.debugMode;
     this.question = params.question;
     this.thinkingBudget = params.thinkingBudget;
+    // Subagent overrides (applies to all subagents if provided)
+    this.subagentModel = params.subagentModel;
+    this.subagentThinkingBudget = params.subagentThinkingBudget;
 
     this.coreTools = params.coreTools;
     this.allowedTools = params.allowedTools;
@@ -560,6 +569,10 @@ export class Config {
     };
     this.retryFetchErrors = params.retryFetchErrors ?? false;
     this.disableYoloMode = params.disableYoloMode ?? false;
+    this.thinkingBudget = params.thinkingBudget ?? DEFAULT_THINKING_MODE;
+    this.subagentModel = params.subagentModel;
+    this.subagentThinkingBudget = params.subagentThinkingBudget;
+
     this.hooks = params.hooks;
     this.experiments = params.experiments;
 
@@ -624,6 +637,16 @@ export class Config {
       );
       this.model = 'main_model_override';
     }
+  }
+  getThinkingBudget(): number {
+    return this.thinkingBudget ?? DEFAULT_THINKING_MODE;
+  }
+  getSubagentModel(): string | undefined {
+    return this.subagentModel;
+  }
+
+  getSubagentThinkingBudget(): number | undefined {
+    return this.subagentThinkingBudget;
   }
 
   /**
@@ -1407,6 +1430,14 @@ export class Config {
     return this.codebaseInvestigatorSettings;
   }
 
+  getAgentModel(): string | undefined {
+    return this.codebaseInvestigatorSettings.model;
+  }
+
+  getAgentThinkingBudget(): number | undefined {
+    return this.codebaseInvestigatorSettings.thinkingBudget;
+  }
+
   async createToolRegistry(): Promise<ToolRegistry> {
     const registry = new ToolRegistry(this);
 
@@ -1483,6 +1514,39 @@ export class Config {
     registerCoreTool(WebSearchTool, this);
     if (this.getUseWriteTodos()) {
       registerCoreTool(WriteTodosTool, this);
+    }
+
+    registerCoreTool(ThinkTool, this);
+
+    // // Register Get/Record Memories tools
+    // try {
+    //   const { GetMemoriesTool } = await import('../tools/get-memories.js');
+    //   registerCoreTool(GetMemoriesTool, this);
+    // } catch (err) {
+    //   if (this.debugMode) {
+    //     console.warn('Failed to register GetMemoriesTool:', err);
+    //   }
+    // }
+    //
+    // try {
+    //   const { RecordMemoriesTool } = await import(
+    //     '../tools/record-memories.js'
+    //   );
+    //   registerCoreTool(RecordMemoriesTool, this);
+    // } catch (err) {
+    //   if (this.debugMode) {
+    //     console.warn('Failed to register RecordMemoriesTool:', err);
+    //   }
+    // }
+
+    // Register Delegate Task tool
+    try {
+      const { DelegateTaskTool } = await import('../tools/delegate-task.js');
+      registerCoreTool(DelegateTaskTool, this);
+    } catch (err) {
+      if (this.debugMode) {
+        console.warn('Failed to register DelegateTaskTool:', err);
+      }
     }
 
     // Register Subagents as Tools
