@@ -107,7 +107,6 @@ ${userQuery}
 
 Structure of your response (fill in the [placeholder information] with your actual response):
 [request analysis: determine if the user is asking you to perform an action or is asking about information; list the tools and information from the conversation which may be relevant and reflect on the information you must discover about the code]
-['get_memories' tool to see what you already know about the project/context]
 ['think' tool call pondering the user request and plan: record your thoughts and plan for handling the user request]
 [summary of planned actions: provide a brief bullet point list of actions and files which will be edited]
 [actions or tool calls, delegate tasks to specialized agents for better results where possible]
