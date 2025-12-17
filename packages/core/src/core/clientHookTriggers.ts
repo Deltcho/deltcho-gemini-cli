@@ -58,6 +58,47 @@ export async function fireBeforeAgentHook(
   }
 }
 
+
+/**
+ * Fires the BeforeModel hook and returns the hook output.
+ * This should be called before sending a request to the model.
+ *
+ * The caller can use the returned DefaultHookOutput methods:
+ * - isBlockingDecision() / shouldStopExecution() to check if blocked
+ * - getEffectiveReason() to get the blocking reason
+ *
+ * @param messageBus The message bus to use for hook communication
+ * @param llmRequest The request to be sent to the model
+ * @returns The hook output, or undefined if no hook was executed or on error
+ */
+export async function fireBeforeModelEvent(
+  messageBus: MessageBus,
+  llmRequest: Record<string, unknown>,
+): Promise<DefaultHookOutput | undefined> {
+  try {
+    const response = await messageBus.request<
+      HookExecutionRequest,
+      HookExecutionResponse
+    >(
+      {
+        type: MessageBusType.HOOK_EXECUTION_REQUEST,
+        eventName: 'BeforeModel',
+        input: {
+          llm_request: llmRequest,
+        },
+      },
+      MessageBusType.HOOK_EXECUTION_RESPONSE,
+    );
+
+    return response.output
+      ? createHookOutput('BeforeModel', response.output)
+      : undefined;
+  } catch (error) {
+    debugLogger.warn(`BeforeModel hook failed: ${error}`);
+    return undefined;
+  }
+}
+
 /**
  * Fires the AfterAgent hook and returns the hook output.
  * This should be called after the agent has generated a response.

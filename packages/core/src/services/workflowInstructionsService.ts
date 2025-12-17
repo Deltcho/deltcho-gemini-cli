@@ -12,6 +12,7 @@ import { MessageBusType } from '../confirmation-bus/types.js';
 import { HookEventName, createHookOutput } from '../hooks/types.js';
 import type { GenerateContentParameters, Part } from '@google/genai';
 import { toContents } from '../code_assist/converter.js';
+import { debugLogger } from '../utils/debugLogger.js';
 
 export class WorkflowInstructionsService {
   constructor(
@@ -26,12 +27,21 @@ export class WorkflowInstructionsService {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async handleHookRequest(message: any) {
+    debugLogger.debug(
+      `[WorkflowInstructionsService] Received message: ${JSON.stringify(
+        message,
+        null,
+        2,
+      )}`,
+    );
     if (
       message.eventName !== HookEventName.BeforeModel ||
       !message.input?.llm_request
     ) {
       return;
     }
+
+    debugLogger.debug('[WorkflowInstructionsService] Handling BeforeModel hook');
 
     const request = message.input.llm_request as GenerateContentParameters;
     if (!request.contents) {
@@ -60,8 +70,6 @@ export class WorkflowInstructionsService {
     for (const part of parts) {
       if (part.text) {
         userQuery += part.text;
-      } else {
-        newParts.push(part);
       }
     }
 
@@ -79,6 +87,13 @@ export class WorkflowInstructionsService {
       userQuery = userQuery.slice(promptNameMatch[0].length).trimStart();
     }
 
+    debugLogger.debug(
+      `[WorkflowInstructionsService] userQuery: "${userQuery}"`,
+    );
+    debugLogger.debug(
+      `[WorkflowInstructionsService] selectedPromptName: "${selectedPromptName}"`,
+    );
+
     const toolDefinitions = JSON.stringify(
       this.config.getToolRegistry().getFunctionDeclarations(),
       null,
@@ -86,6 +101,11 @@ export class WorkflowInstructionsService {
     );
 
     const promptContent = await this.loadPromptContent(selectedPromptName);
+    debugLogger.debug(
+      `[WorkflowInstructionsService] Loaded prompt content for "${
+        selectedPromptName ?? 'default'
+      }"`,
+    );
     const wrappedQuery = `
 ${promptContent}
 

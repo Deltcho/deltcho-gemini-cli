@@ -42,6 +42,7 @@ import {
 import {
   fireBeforeAgentHook,
   fireAfterAgentHook,
+  fireBeforeModelEvent,
 } from './clientHookTriggers.js';
 import {
   ContentRetryFailureEvent,
@@ -676,6 +677,23 @@ export class GeminiClient {
       });
 
     try {
+      const hooksEnabled = this.config.getEnableHooks();
+      const messageBus = this.config.getMessageBus();
+      if (hooksEnabled && messageBus) {
+        const hookOutput = await fireBeforeModelEvent(messageBus, {
+          contents,
+        });
+
+        if (
+          hookOutput?.isBlockingDecision() ||
+          hookOutput?.shouldStopExecution()
+        ) {
+          throw new Error(
+            `BeforeModel hook blocked processing: ${hookOutput.getEffectiveReason()}`,
+          );
+        }
+      }
+
       const userMemory = this.config.getUserMemory();
       const systemInstruction = getCoreSystemPrompt(this.config, userMemory);
       const {

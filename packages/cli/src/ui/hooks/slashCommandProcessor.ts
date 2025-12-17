@@ -43,6 +43,7 @@ import { type CommandContext, type SlashCommand } from '../commands/types.js';
 import { CommandService } from '../../services/CommandService.js';
 import { BuiltinCommandLoader } from '../../services/BuiltinCommandLoader.js';
 import { FileCommandLoader } from '../../services/FileCommandLoader.js';
+import { FilePromptLoader } from '../../services/FilePromptLoader.js';
 import { McpPromptLoader } from '../../services/McpPromptLoader.js';
 import { parseSlashCommand } from '../../utils/commands.js';
 import {
@@ -310,6 +311,7 @@ export const useSlashCommandProcessor = (
           new McpPromptLoader(config),
           new BuiltinCommandLoader(config),
           new FileCommandLoader(config),
+          new FilePromptLoader(config),
         ],
         controller.signal,
       );

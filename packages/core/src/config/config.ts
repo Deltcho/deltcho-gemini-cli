@@ -451,7 +451,6 @@ export class Config {
   private experiments: Experiments | undefined;
   private experimentsPromise: Promise<void> | undefined;
   private hookSystem?: HookSystem;
-  // @ts-expect-error - instantiated for side effects
   private workflowInstructionsService?: WorkflowInstructionsService;
 
   private previewModelFallbackMode = false;
@@ -1671,6 +1670,10 @@ export class Config {
     await registry.discoverAllTools();
     registry.sortTools();
     return registry;
+  }
+
+  getWorkflowInstructionsService(): WorkflowInstructionsService | undefined {
+    return this.workflowInstructionsService;
   }
 
   /**
