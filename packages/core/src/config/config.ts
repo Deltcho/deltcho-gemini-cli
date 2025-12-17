@@ -35,7 +35,6 @@ import { ThinkTool } from '../tools/think.js';
 import { GetMemoriesTool } from '../tools/get-memories.js';
 import { RecordMemoriesTool } from '../tools/record-memories.js';
 import { DelegateTaskTool } from '../tools/delegate-task.js';
-import { WorkflowInstructionsService } from '../services/workflowInstructionsService.js';
 import { GeminiClient } from '../core/client.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import type { HookDefinition, HookEventName } from '../hooks/types.js';
@@ -451,7 +450,6 @@ export class Config {
   private experiments: Experiments | undefined;
   private experimentsPromise: Promise<void> | undefined;
   private hookSystem?: HookSystem;
-  private workflowInstructionsService?: WorkflowInstructionsService;
 
   private previewModelFallbackMode = false;
   private previewModelBypassMode = false;
@@ -698,10 +696,6 @@ export class Config {
     if (this.enableHooks) {
       this.hookSystem = new HookSystem(this);
       await this.hookSystem.initialize();
-      this.workflowInstructionsService = new WorkflowInstructionsService(
-        this,
-        this.messageBus,
-      );
     }
 
     if (this.experimentalJitContext) {
@@ -1670,10 +1664,6 @@ export class Config {
     await registry.discoverAllTools();
     registry.sortTools();
     return registry;
-  }
-
-  getWorkflowInstructionsService(): WorkflowInstructionsService | undefined {
-    return this.workflowInstructionsService;
   }
 
   /**
