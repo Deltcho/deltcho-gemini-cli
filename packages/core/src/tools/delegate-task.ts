@@ -12,7 +12,7 @@ import type { ToolInvocation, ToolResult } from './tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { Config } from '../config/config.js';
-import { getEffectiveModel } from '../config/models.js';
+import { getEffectiveModel, DEFAULT_GEMINI_MODEL } from '../config/models.js';
 import { LocalAgentExecutor } from '../agents/local-executor.js';
 import type { LocalAgentDefinition } from '../agents/types.js';
 import { LSTool } from './ls.js';
@@ -128,7 +128,7 @@ Return ONLY the final system prompt text for the specialized agent. Do not wrap 
     const res = await cg.generateContent(
       {
         model: getEffectiveModel(
-          settings.model || '',
+          settings.model || DEFAULT_GEMINI_MODEL,
           this.config.getPreviewFeatures(),
         ),
         contents: [{ role: 'user', parts: [{ text: instruction }] }],
@@ -215,7 +215,7 @@ Upon completion of your solution planning, you must call the 'complete_task' too
           'Task kickoff.\n\nConversation Summary:\n${conversationSummary}\n\nUser Request:\n${userRequest}',
       },
       modelConfig: {
-        model: settings.model || '',
+        model: settings.model || DEFAULT_GEMINI_MODEL,
         thinkingBudget: settings.thinkingBudget,
         temp: 0.2,
         top_p: 0.95,
