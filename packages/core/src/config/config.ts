@@ -558,7 +558,7 @@ export class Config {
     this.enableToolOutputTruncation = params.enableToolOutputTruncation ?? true;
     this.useSmartEdit = params.useSmartEdit ?? true;
     this.useWriteTodos = params.useWriteTodos ?? true;
-    this.enableHooks = params.enableHooks ?? false;
+    this.enableHooks = params.enableHooks ?? true;
     this.disabledHooks =
       (params.hooks && 'disabled' in params.hooks
         ? params.hooks.disabled
@@ -566,9 +566,8 @@ export class Config {
 
     // Enable MessageBus integration if:
     // 1. Explicitly enabled via setting, OR
-    // 2. Hooks are enabled and hooks are configured
-    const hasHooks = params.hooks && Object.keys(params.hooks).length > 0;
-    const hooksNeedMessageBus = this.enableHooks && hasHooks;
+    // 2. Hooks are enabled
+    const hooksNeedMessageBus = this.enableHooks;
     this.enableMessageBusIntegration =
       params.enableMessageBusIntegration ??
       (hooksNeedMessageBus ? true : false);

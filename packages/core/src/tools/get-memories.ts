@@ -9,6 +9,7 @@ import * as fs from 'node:fs/promises';
 
 import type {
   FunctionDeclaration,
+  Part as _Part,
   GenerateContentParameters,
 } from '@google/genai';
 import type { ToolInvocation, ToolResult } from './tools.js';
@@ -157,9 +158,7 @@ Use the select_relevant_memories function to return your selection.`;
       'get-memories-selection',
     );
 
-    const parts = response.candidates?.[0]?.content?.parts as
-      | Part[]
-      | undefined;
+    const parts = response.candidates?.[0]?.content?.parts;
     const functionCalls = parts ? getFunctionCallsFromParts(parts) : undefined;
 
     let selected: string[] = [];
