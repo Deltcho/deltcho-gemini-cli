@@ -1,5 +1,5 @@
 {
-  "name": "@google/gemini-cli",
+  "name": "gemini-deltcho",
   "version": "0.21.0-nightly.20251216.bb0c0d8ee",
   "engines": {
     "node": ">=20.0.0"
@@ -69,7 +69,7 @@
     }
   },
   "bin": {
-    "gemini": "bundle/gemini.js"
+    "gemini-deltcho": "bundle/gemini.js"
   },
   "files": [
     "bundle/",
