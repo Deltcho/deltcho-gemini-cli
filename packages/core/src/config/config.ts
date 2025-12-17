@@ -31,6 +31,10 @@ import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
 import { WebSearchTool } from '../tools/web-search.js';
+import { ThinkTool } from '../tools/think.js';
+import { GetMemoriesTool } from '../tools/get-memories.js';
+import { RecordMemoriesTool } from '../tools/record-memories.js';
+import { WorkflowInstructionsService } from '../services/workflowInstructionsService.js';
 import { GeminiClient } from '../core/client.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import type { HookDefinition, HookEventName } from '../hooks/types.js';
@@ -441,6 +445,8 @@ export class Config {
   private experiments: Experiments | undefined;
   private experimentsPromise: Promise<void> | undefined;
   private hookSystem?: HookSystem;
+  // @ts-expect-error - instantiated for side effects
+  private workflowInstructionsService?: WorkflowInstructionsService;
 
   private previewModelFallbackMode = false;
   private previewModelBypassMode = false;
@@ -680,8 +686,8 @@ export class Config {
     );
     const initMcpHandle = startupProfiler.start('initialize_mcp_clients');
     await Promise.all([
-      await this.mcpClientManager.startConfiguredMcpServers(),
-      await this.getExtensionLoader().start(this),
+      this.mcpClientManager.startConfiguredMcpServers(),
+      this.getExtensionLoader().start(this),
     ]);
     initMcpHandle?.end();
 
@@ -689,6 +695,10 @@ export class Config {
     if (this.enableHooks) {
       this.hookSystem = new HookSystem(this);
       await this.hookSystem.initialize();
+      this.workflowInstructionsService = new WorkflowInstructionsService(
+        this,
+        this.messageBus,
+      );
     }
 
     if (this.experimentalJitContext) {
@@ -1571,6 +1581,9 @@ export class Config {
     registerCoreTool(ShellTool, this);
     registerCoreTool(MemoryTool);
     registerCoreTool(WebSearchTool, this);
+    registerCoreTool(ThinkTool, this);
+    registerCoreTool(GetMemoriesTool, this);
+    registerCoreTool(RecordMemoriesTool, this);
     if (this.getUseWriteTodos()) {
       registerCoreTool(WriteTodosTool, this);
     }
