@@ -65,8 +65,18 @@ export class WorkflowInstructionsService {
       }
     }
 
-    if (!userQuery.trim()) {
+    userQuery = userQuery.trim();
+    if (!userQuery) {
       return;
+    }
+
+    // Check for prompt command like /p-frontend
+    let selectedPromptName: string | undefined;
+    const promptNameMatch = /^\/p-([a-z0-9_-]+)\b/i.exec(userQuery);
+    if (promptNameMatch) {
+      selectedPromptName = promptNameMatch[1].toLowerCase();
+      // Remove the command from the query
+      userQuery = userQuery.slice(promptNameMatch[0].length).trimStart();
     }
 
     const toolDefinitions = JSON.stringify(
@@ -75,7 +85,7 @@ export class WorkflowInstructionsService {
       2,
     );
 
-    const promptContent = await this.loadPromptContent();
+    const promptContent = await this.loadPromptContent(selectedPromptName);
     const wrappedQuery = `
 ${promptContent}
 

@@ -34,6 +34,7 @@ import { WebSearchTool } from '../tools/web-search.js';
 import { ThinkTool } from '../tools/think.js';
 import { GetMemoriesTool } from '../tools/get-memories.js';
 import { RecordMemoriesTool } from '../tools/record-memories.js';
+import { DelegateTaskTool } from '../tools/delegate-task.js';
 import { WorkflowInstructionsService } from '../services/workflowInstructionsService.js';
 import { GeminiClient } from '../core/client.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
@@ -52,7 +53,10 @@ import { tokenLimit } from '../core/tokenLimits.js';
 import {
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_MODEL_AUTO,
   DEFAULT_THINKING_MODE,
+  isPreviewModel,
+  PREVIEW_GEMINI_MODEL,
 } from './models.js';
 import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
 import type { MCPOAuthConfig } from '../mcp/oauth-provider.js';
@@ -84,6 +88,7 @@ import { PolicyEngine } from '../policy/policy-engine.js';
 import type { PolicyEngineConfig } from '../policy/types.js';
 import { HookSystem } from '../hooks/index.js';
 import type { UserTierId } from '../code_assist/types.js';
+import type { RetrieveUserQuotaResponse } from '../code_assist/types.js';
 import { getCodeAssistServer } from '../code_assist/codeAssist.js';
 import type { Experiments } from '../code_assist/experiments/experiments.js';
 import { AgentRegistry } from '../agents/registry.js';
@@ -383,6 +388,7 @@ export class Config {
   private readonly bugCommand: BugCommandSettings | undefined;
   private model: string;
   private previewFeatures: boolean | undefined;
+  private hasAccessToPreviewModel: boolean = false;
   private readonly noBrowser: boolean;
   private readonly folderTrust: boolean;
   private ideMode: boolean;
@@ -514,8 +520,7 @@ export class Config {
     this.bugCommand = params.bugCommand;
     this.model = params.model;
     this._activeModel = params.model;
-    this.enableModelAvailabilityService =
-      params.enableModelAvailabilityService ?? false;
+    this.enableModelAvailabilityService = true;
     this.enableAgents = params.enableAgents ?? false;
     this.experimentalJitContext = params.experimentalJitContext ?? false;
     this.modelAvailabilityService = new ModelAvailabilityService();
@@ -725,6 +730,9 @@ export class Config {
       this.geminiClient.stripThoughtsFromHistory();
     }
 
+    // Reset availability status when switching auth (e.g. from limited key to OAuth)
+    this.modelAvailabilityService.reset();
+
     const newContentGeneratorConfig = await createContentGeneratorConfig(
       this,
       authMethod,
@@ -744,6 +752,10 @@ export class Config {
 
     const codeAssistServer = getCodeAssistServer(this);
     if (codeAssistServer) {
+      if (codeAssistServer.projectId) {
+        await this.refreshUserQuota();
+      }
+
       this.experimentsPromise = getExperiments(codeAssistServer)
         .then((experiments) => {
           this.setExperiments(experiments);
@@ -765,8 +777,21 @@ export class Config {
       this.experimentsPromise = undefined;
     }
 
+    const authType = this.contentGeneratorConfig.authType;
+    if (
+      authType === AuthType.USE_GEMINI ||
+      authType === AuthType.USE_VERTEX_AI
+    ) {
+      this.setHasAccessToPreviewModel(true);
+    }
+
     // Reset the session flag since we're explicitly changing auth and using default model
     this.inFallbackMode = false;
+
+    // Update model if user no longer has access to the preview model
+    if (!this.hasAccessToPreviewModel && isPreviewModel(this.model)) {
+      this.setModel(DEFAULT_GEMINI_MODEL_AUTO);
+    }
   }
 
   async getExperimentsAsync(): Promise<Experiments | undefined> {
@@ -850,7 +875,6 @@ export class Config {
   setActiveModel(model: string): void {
     if (this._activeModel !== model) {
       this._activeModel = model;
-      coreEvents.emitModelChanged(model);
     }
   }
 
@@ -961,7 +985,41 @@ export class Config {
   }
 
   setPreviewFeatures(previewFeatures: boolean) {
+    // If it's using a preview model and it's turning off previewFeatures,
+    // switch the model to the default auto mode.
+    if (this.previewFeatures && !previewFeatures) {
+      if (isPreviewModel(this.getModel())) {
+        this.setModel(DEFAULT_GEMINI_MODEL_AUTO);
+      }
+    }
     this.previewFeatures = previewFeatures;
+  }
+
+  getHasAccessToPreviewModel(): boolean {
+    return this.hasAccessToPreviewModel;
+  }
+
+  setHasAccessToPreviewModel(hasAccess: boolean): void {
+    this.hasAccessToPreviewModel = hasAccess;
+  }
+
+  async refreshUserQuota(): Promise<RetrieveUserQuotaResponse | undefined> {
+    const codeAssistServer = getCodeAssistServer(this);
+    if (!codeAssistServer || !codeAssistServer.projectId) {
+      return undefined;
+    }
+    try {
+      const quota = await codeAssistServer.retrieveUserQuota({
+        project: codeAssistServer.projectId,
+      });
+      const hasAccess =
+        quota.buckets?.some((b) => b.modelId === PREVIEW_GEMINI_MODEL) ?? false;
+      this.setHasAccessToPreviewModel(hasAccess);
+      return quota;
+    } catch (e) {
+      debugLogger.debug('Failed to retrieve user quota', e);
+      return undefined;
+    }
   }
 
   getCoreTools(): string[] | undefined {
@@ -1583,6 +1641,7 @@ export class Config {
     registerCoreTool(ThinkTool, this);
     registerCoreTool(GetMemoriesTool, this);
     registerCoreTool(RecordMemoriesTool, this);
+    registerCoreTool(DelegateTaskTool, this);
     if (this.getUseWriteTodos()) {
       registerCoreTool(WriteTodosTool, this);
     }

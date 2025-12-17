@@ -23,5 +23,6 @@ export const MEMORY_TOOL_NAME = 'save_memory';
 export const THINK_TOOL_NAME = 'think';
 export const GET_MEMORIES_TOOL_NAME = 'get_memories';
 export const RECORD_MEMORIES_TOOL_NAME = 'record_memories';
+export const DELEGATE_TASK_TOOL_NAME = 'delegate_task';
 export const EDIT_TOOL_NAMES = new Set([EDIT_TOOL_NAME, WRITE_FILE_TOOL_NAME]);
 export const DELEGATE_TO_AGENT_TOOL_NAME = 'delegate_to_agent';
