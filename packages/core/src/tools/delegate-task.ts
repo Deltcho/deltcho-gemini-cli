@@ -288,6 +288,26 @@ Remember to exclude the [line_number] during your edit/replace tool calls; these
 
     // Run the specialized agent in PROPOSAL mode (read-only)
     const agent = this.createTaskAgent(finalSystemPrompt);
+
+    // Register the ephemeral agent's model config manually since we bypass AgentRegistry
+    const modelConfig = agent.modelConfig;
+    this.config.modelConfigService.registerRuntimeModelConfig(
+      `${agent.name}-config`,
+      {
+        modelConfig: {
+          model: modelConfig.model,
+          generateContentConfig: {
+            temperature: modelConfig.temp,
+            topP: modelConfig.top_p,
+            thinkingConfig: {
+              includeThoughts: true,
+              thinkingBudget: modelConfig.thinkingBudget ?? -1,
+            },
+          },
+        },
+      },
+    );
+
     if (updateOutput)
       updateOutput('Launching specialized agent (proposal-only)...\n');
 
