@@ -649,6 +649,32 @@ export class GeminiChat {
     this.history = history;
   }
 
+  async scrubHistory() {
+    const newHistory: Content[] = [];
+    const userRequestRegex = /<user_request>([\s\S]*)<\/user_request>/;
+    for (const content of this.history) {
+      if (content.role === 'user') {
+        if (content.parts) {
+          const newParts = content.parts.map((part) => {
+            if (part.text) {
+              const match = part.text.match(userRequestRegex);
+              if (match) {
+                return { ...part, text: match[1].trim() };
+              }
+            }
+            return part;
+          });
+          newHistory.push({ ...content, parts: newParts });
+        } else {
+          newHistory.push(content);
+        }
+      } else {
+        newHistory.push(content);
+      }
+    }
+    this.history = newHistory;
+  }
+
   stripThoughtsFromHistory(): void {
     this.history = this.history.map((content) => {
       const newContent = { ...content };

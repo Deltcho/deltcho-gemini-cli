@@ -69,6 +69,7 @@ import path from 'node:path';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import { useKeypress } from './useKeypress.js';
 import type { LoadedSettings } from '../../config/settings.js';
+import { getWorkflowInstructions } from './workflowInstructions.js';
 
 enum StreamProcessingStatus {
   Completed,
@@ -420,7 +421,18 @@ export const useGeminiStream = (
         const trimmedQuery = query.trim();
         await logger?.logMessage(MessageSenderType.USER, trimmedQuery);
 
-        if (!shellModeActive) {
+        // Detect prompt selection command like "/p-design" or "/p-frontend"
+        let selectedPromptName: string | undefined;
+        let effectiveQuery = trimmedQuery;
+        const promptNameMatch = /^\/p-([a-z0-9_-]+)\b/i.exec(trimmedQuery);
+        if (promptNameMatch) {
+          selectedPromptName = promptNameMatch[1].toLowerCase();
+          effectiveQuery = trimmedQuery
+            .slice(promptNameMatch[0].length)
+            .trimStart();
+        }
+
+        if (!shellModeActive && !selectedPromptName) {
           // Handle UI-only commands first
           const slashCommandResult = isSlashCommand(trimmedQuery)
             ? await handleSlashCommand(trimmedQuery)
@@ -466,9 +478,9 @@ export const useGeminiStream = (
         }
 
         // Handle @-commands (which might involve tool calls)
-        if (isAtCommand(trimmedQuery)) {
+        if (isAtCommand(effectiveQuery)) {
           const atCommandResult = await handleAtCommand({
-            query: trimmedQuery,
+            query: effectiveQuery,
             config,
             addItem,
             onDebugMessage,
@@ -489,11 +501,20 @@ export const useGeminiStream = (
           localQueryToSendToGemini = atCommandResult.processedQuery;
         } else {
           // Normal query for Gemini
+          const finalQuery = await getWorkflowInstructions(
+            JSON.stringify(
+              config.getToolRegistry().getFunctionDeclarations(),
+              null,
+              2,
+            ),
+            effectiveQuery,
+            selectedPromptName,
+          );
           addItem(
             { type: MessageType.USER, text: trimmedQuery },
             userMessageTimestamp,
           );
-          localQueryToSendToGemini = trimmedQuery;
+          localQueryToSendToGemini = finalQuery;
         }
       } else {
         // It's a function response (PartListUnion that isn't a string)
