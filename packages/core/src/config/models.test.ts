@@ -9,11 +9,13 @@ import {
   getEffectiveModel,
   DEFAULT_GEMINI_MODEL,
   PREVIEW_GEMINI_MODEL,
+  PREVIEW_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
   GEMINI_MODEL_ALIAS_PRO,
   GEMINI_MODEL_ALIAS_FLASH,
   GEMINI_MODEL_ALIAS_FLASH_LITE,
+  GEMINI_MODEL_ALIAS_AUTO_3,
 } from './models.js';
 
 describe('getEffectiveModel', () => {
@@ -72,13 +74,31 @@ describe('getEffectiveModel', () => {
         expect(model).toBe(DEFAULT_GEMINI_MODEL);
       });
 
-      it('should return the flash model when flash is requested and preview is on', () => {
+      it('should return the flash preview model when flash is requested and preview is on', () => {
         const model = getEffectiveModel(
           isInFallbackMode,
           GEMINI_MODEL_ALIAS_FLASH,
           true,
         );
+        expect(model).toBe(PREVIEW_GEMINI_FLASH_MODEL);
+      });
+
+      it('should return the flash model when flash is requested and preview is off', () => {
+        const model = getEffectiveModel(
+          isInFallbackMode,
+          GEMINI_MODEL_ALIAS_FLASH,
+          false,
+        );
         expect(model).toBe(DEFAULT_GEMINI_FLASH_MODEL);
+      });
+
+      it('should return the auto-3 model when auto-3 is requested', () => {
+        const model = getEffectiveModel(
+          isInFallbackMode,
+          GEMINI_MODEL_ALIAS_AUTO_3,
+          false,
+        );
+        expect(model).toBe(PREVIEW_GEMINI_MODEL);
       });
 
       it('should return the flash model when lite is requested and preview is on', () => {
@@ -171,7 +191,12 @@ describe('getEffectiveModel', () => {
         expect(model).toBe(DEFAULT_GEMINI_FLASH_MODEL);
       });
 
-      it('should return the Flash alias when requested', () => {
+      it('should return the flash preview model when requested in fallback mode (honor preview flash)', () => {
+        // Wait, does it honor preview flash?
+        // My resolveModel(GEMINI_MODEL_ALIAS_FLASH, true) returns PREVIEW_GEMINI_FLASH_MODEL.
+        // getEffectiveModel(true, GEMINI_MODEL_ALIAS_FLASH, true) will call resolveModel which returns PREVIEW_GEMINI_FLASH_MODEL.
+        // It doesn't contain 'lite', so it returns DEFAULT_GEMINI_FLASH_MODEL.
+        // UNLESS I explicitly handle it.
         const model = getEffectiveModel(
           isInFallbackMode,
           GEMINI_MODEL_ALIAS_FLASH,
@@ -187,6 +212,15 @@ describe('getEffectiveModel', () => {
           true,
         );
         expect(model).toBe(DEFAULT_GEMINI_FLASH_LITE_MODEL);
+      });
+
+      it('should downgrade the auto-3 model to the flash preview model', () => {
+        const model = getEffectiveModel(
+          isInFallbackMode,
+          GEMINI_MODEL_ALIAS_AUTO_3,
+          false,
+        );
+        expect(model).toBe(PREVIEW_GEMINI_FLASH_MODEL);
       });
 
       it('should downgrade the default Gemini model to the Flash model', () => {

@@ -654,7 +654,8 @@ const SETTINGS_SCHEMA = {
         category: 'Model',
         requiresRestart: false,
         default: undefined as string | undefined,
-        description: 'The Gemini model to use for conversations.',
+        description:
+          'The Gemini model to use for conversations (e.g., "auto", "auto-3", "pro", "flash").',
         showInDialog: false,
       },
       maxSessionTurns: {

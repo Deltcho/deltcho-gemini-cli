@@ -9,10 +9,12 @@ import { useCallback, useContext, useMemo } from 'react';
 import { Box, Text } from 'ink';
 import {
   PREVIEW_GEMINI_MODEL,
+  PREVIEW_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
   DEFAULT_GEMINI_MODEL_AUTO,
+  DEFAULT_GEMINI_MODEL_AUTO_3,
   GEMINI_MODEL_ALIAS_FLASH,
   GEMINI_MODEL_ALIAS_FLASH_LITE,
   GEMINI_MODEL_ALIAS_PRO,
@@ -53,6 +55,13 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
         key: DEFAULT_GEMINI_MODEL_AUTO,
       },
       {
+        value: DEFAULT_GEMINI_MODEL_AUTO_3,
+        title: 'Auto (Gemini 3)',
+        description:
+          'Smartly route between Gemini 3 Pro and Flash for optimal performance.',
+        key: DEFAULT_GEMINI_MODEL_AUTO_3,
+      },
+      {
         value: GEMINI_MODEL_ALIAS_PRO,
         title: config?.getPreviewFeatures()
           ? `Pro (${PREVIEW_GEMINI_MODEL}, ${DEFAULT_GEMINI_MODEL})`
@@ -63,7 +72,9 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       },
       {
         value: GEMINI_MODEL_ALIAS_FLASH,
-        title: `Flash (${DEFAULT_GEMINI_FLASH_MODEL})`,
+        title: config?.getPreviewFeatures()
+          ? `Flash (${PREVIEW_GEMINI_FLASH_MODEL}, ${DEFAULT_GEMINI_FLASH_MODEL})`
+          : `Flash (${DEFAULT_GEMINI_FLASH_MODEL})`,
         description: 'For tasks that need a balance of speed and reasoning',
         key: GEMINI_MODEL_ALIAS_FLASH,
       },
@@ -101,7 +112,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     : 'Gemini 3 is now available.';
 
   const subheader = config?.getPreviewFeatures()
-    ? `To disable Gemini 3, disable "Preview features" in /settings.\nLearn more at https://goo.gle/enable-preview-features\n\nWhen you select Auto or Pro, Gemini CLI will attempt to use ${PREVIEW_GEMINI_MODEL} first, before falling back to ${DEFAULT_GEMINI_MODEL}.`
+    ? `To disable Gemini 3, disable "Preview features" in /settings.\nLearn more at https://goo.gle/enable-preview-features\n\nWhen you select Auto or Pro, Gemini CLI will attempt to use ${PREVIEW_GEMINI_MODEL} first. When you select Flash, it will attempt to use ${PREVIEW_GEMINI_FLASH_MODEL} first. Auto (Gemini 3) will smartly route between both Gemini 3 models.`
     : `To use Gemini 3, enable "Preview features" in /settings.\nLearn more at https://goo.gle/enable-preview-features`;
 
   return (

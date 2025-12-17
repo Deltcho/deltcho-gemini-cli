@@ -14,8 +14,10 @@ export function tokenLimit(model: Model): TokenCount {
   // Pulled from https://ai.google.dev/gemini-api/docs/models
   switch (model) {
     case 'gemini-1.5-pro':
+    case 'gemini-3-pro-preview':
       return 2_097_152;
     case 'gemini-1.5-flash':
+    case 'gemini-3-flash-preview':
     case 'gemini-2.5-pro-preview-05-06':
     case 'gemini-2.5-pro-preview-06-05':
     case 'gemini-2.5-pro':

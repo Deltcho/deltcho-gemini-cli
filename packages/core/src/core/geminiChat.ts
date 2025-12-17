@@ -22,8 +22,10 @@ import { retryWithBackoff } from '../utils/retry.js';
 import type { Config } from '../config/config.js';
 import {
   DEFAULT_GEMINI_MODEL,
-  DEFAULT_THINKING_MODE,
+  DEFAULT_GEMINI_FLASH_MODEL,
   PREVIEW_GEMINI_MODEL,
+  PREVIEW_GEMINI_FLASH_MODEL,
+  DEFAULT_THINKING_MODE,
   getEffectiveModel,
   isGemini2Model,
 } from '../config/models.js';
@@ -404,13 +406,14 @@ export class GeminiChat {
       );
 
       // Preview Model Bypass Logic:
-      // If we are in "Preview Model Bypass Mode" (transient failure), we force downgrade to 2.5 Pro
-      // IF the effective model is currently Preview Model.
-      if (
-        this.config.isPreviewModelBypassMode() &&
-        modelToUse === PREVIEW_GEMINI_MODEL
-      ) {
-        modelToUse = DEFAULT_GEMINI_MODEL;
+      // If we are in "Preview Model Bypass Mode" (transient failure), we force downgrade
+      // IF the effective model is currently a Preview Model.
+      if (this.config.isPreviewModelBypassMode()) {
+        if (modelToUse === PREVIEW_GEMINI_MODEL) {
+          modelToUse = DEFAULT_GEMINI_MODEL;
+        } else if (modelToUse === PREVIEW_GEMINI_FLASH_MODEL) {
+          modelToUse = DEFAULT_GEMINI_FLASH_MODEL;
+        }
       }
 
       effectiveModel = modelToUse;
@@ -443,7 +446,8 @@ export class GeminiChat {
         {
           model: modelToUse,
           contents:
-            modelToUse === PREVIEW_GEMINI_MODEL
+            modelToUse === PREVIEW_GEMINI_MODEL ||
+            modelToUse === PREVIEW_GEMINI_FLASH_MODEL
               ? contentsForPreviewModel
               : requestContents,
           config,
@@ -464,7 +468,7 @@ export class GeminiChat {
       signal: generateContentConfig.abortSignal,
       maxAttempts:
         this.config.isPreviewModelFallbackMode() &&
-        model === PREVIEW_GEMINI_MODEL
+        (model === PREVIEW_GEMINI_MODEL || model === PREVIEW_GEMINI_FLASH_MODEL)
           ? 1
           : undefined,
     });

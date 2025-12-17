@@ -7,7 +7,9 @@
 import type { Config } from '../config/config.js';
 import {
   PREVIEW_GEMINI_MODEL,
+  PREVIEW_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL,
+  DEFAULT_GEMINI_FLASH_MODEL,
 } from '../config/models.js';
 import type {
   RoutingContext,
@@ -16,6 +18,7 @@ import type {
 } from './routingStrategy.js';
 import { DefaultStrategy } from './strategies/defaultStrategy.js';
 import { ClassifierStrategy } from './strategies/classifierStrategy.js';
+import { Auto3Strategy } from './strategies/auto3Strategy.js';
 import { CompositeStrategy } from './strategies/compositeStrategy.js';
 import { FallbackStrategy } from './strategies/fallbackStrategy.js';
 import { OverrideStrategy } from './strategies/overrideStrategy.js';
@@ -42,6 +45,7 @@ export class ModelRouterService {
       [
         new FallbackStrategy(),
         new OverrideStrategy(),
+        new Auto3Strategy(),
         new ClassifierStrategy(),
         new DefaultStrategy(),
       ],
@@ -67,20 +71,21 @@ export class ModelRouterService {
       );
 
       // Unified Preview Model Logic:
-      // If the decision is to use 'gemini-2.5-pro' and preview features are enabled,
-      // we attempt to upgrade to 'gemini-3.0-pro' (Preview Model).
+      // If the decision is to use 'gemini-2.5-pro' or 'gemini-2.5-flash' and preview features are enabled,
+      // we attempt to upgrade to 'gemini-3.0' (Preview Models).
       if (
-        decision.model === DEFAULT_GEMINI_MODEL &&
         this.config.getPreviewFeatures() &&
         !decision.metadata.source.includes('override')
       ) {
-        // We ALWAYS attempt to upgrade to Preview Model here.
-        // If we are in fallback mode, the 'previewModelBypassMode' flag (handled in handler.ts/geminiChat.ts)
-        // will ensure we downgrade to 2.5 Pro for the actual API call if needed.
-        // This allows us to "probe" Preview Model periodically (i.e., every new request tries Preview Model first).
-        decision.model = PREVIEW_GEMINI_MODEL;
-        decision.metadata.source += ' (Preview Model)';
-        decision.metadata.reasoning += ' (Upgraded to Preview Model)';
+        if (decision.model === DEFAULT_GEMINI_MODEL) {
+          decision.model = PREVIEW_GEMINI_MODEL;
+          decision.metadata.source += ' (Preview Model)';
+          decision.metadata.reasoning += ' (Upgraded to Preview Model)';
+        } else if (decision.model === DEFAULT_GEMINI_FLASH_MODEL) {
+          decision.model = PREVIEW_GEMINI_FLASH_MODEL;
+          decision.metadata.source += ' (Preview Model)';
+          decision.metadata.reasoning += ' (Upgraded to Preview Model)';
+        }
       }
 
       const event = new ModelRoutingEvent(

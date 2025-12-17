@@ -12,6 +12,7 @@ import {
   GEMINI_MODEL_ALIAS_FLASH,
   GEMINI_MODEL_ALIAS_PRO,
   DEFAULT_GEMINI_MODEL_AUTO,
+  DEFAULT_GEMINI_MODEL_AUTO_3,
 } from '@google/gemini-cli-core';
 import { ModelDialog } from './ModelDialog.js';
 import { useKeypress } from '../hooks/useKeypress.js';
@@ -97,11 +98,12 @@ describe('<ModelDialog />', () => {
     expect(mockedSelect).toHaveBeenCalledTimes(1);
 
     const props = mockedSelect.mock.calls[0][0];
-    expect(props.items).toHaveLength(4);
+    expect(props.items).toHaveLength(5);
     expect(props.items[0].value).toBe(DEFAULT_GEMINI_MODEL_AUTO);
-    expect(props.items[1].value).toBe(GEMINI_MODEL_ALIAS_PRO);
-    expect(props.items[2].value).toBe(GEMINI_MODEL_ALIAS_FLASH);
-    expect(props.items[3].value).toBe(GEMINI_MODEL_ALIAS_FLASH_LITE);
+    expect(props.items[1].value).toBe(DEFAULT_GEMINI_MODEL_AUTO_3);
+    expect(props.items[2].value).toBe(GEMINI_MODEL_ALIAS_PRO);
+    expect(props.items[3].value).toBe(GEMINI_MODEL_ALIAS_FLASH);
+    expect(props.items[4].value).toBe(GEMINI_MODEL_ALIAS_FLASH_LITE);
     expect(props.showNumbers).toBe(true);
     unmount();
   });
@@ -113,7 +115,7 @@ describe('<ModelDialog />', () => {
     expect(mockGetModel).toHaveBeenCalled();
     expect(mockedSelect).toHaveBeenCalledWith(
       expect.objectContaining({
-        initialIndex: 2,
+        initialIndex: 3,
       }),
       undefined,
     );
@@ -236,7 +238,7 @@ describe('<ModelDialog />', () => {
 
     // Should be called at least twice: initial render + re-render after context change
     expect(mockedSelect).toHaveBeenCalledTimes(2);
-    expect(mockedSelect.mock.calls[1][0].initialIndex).toBe(3);
+    expect(mockedSelect.mock.calls[1][0].initialIndex).toBe(4);
     unmount();
   });
 });

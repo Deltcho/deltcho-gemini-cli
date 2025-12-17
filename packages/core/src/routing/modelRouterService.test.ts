@@ -9,7 +9,9 @@ import { ModelRouterService } from './modelRouterService.js';
 import { Config } from '../config/config.js';
 import {
   PREVIEW_GEMINI_MODEL,
+  PREVIEW_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL,
+  DEFAULT_GEMINI_FLASH_MODEL,
 } from '../config/models.js';
 import type { BaseLlmClient } from '../core/baseLlmClient.js';
 import type { RoutingContext, RoutingDecision } from './routingStrategy.js';
@@ -17,6 +19,7 @@ import { DefaultStrategy } from './strategies/defaultStrategy.js';
 import { CompositeStrategy } from './strategies/compositeStrategy.js';
 import { FallbackStrategy } from './strategies/fallbackStrategy.js';
 import { OverrideStrategy } from './strategies/overrideStrategy.js';
+import { Auto3Strategy } from './strategies/auto3Strategy.js';
 import { ClassifierStrategy } from './strategies/classifierStrategy.js';
 import { logModelRouting } from '../telemetry/loggers.js';
 import { ModelRoutingEvent } from '../telemetry/types.js';
@@ -27,6 +30,7 @@ vi.mock('./strategies/defaultStrategy.js');
 vi.mock('./strategies/compositeStrategy.js');
 vi.mock('./strategies/fallbackStrategy.js');
 vi.mock('./strategies/overrideStrategy.js');
+vi.mock('./strategies/auto3Strategy.js');
 vi.mock('./strategies/classifierStrategy.js');
 vi.mock('../telemetry/loggers.js');
 vi.mock('../telemetry/types.js');
@@ -49,6 +53,7 @@ describe('ModelRouterService', () => {
       [
         new FallbackStrategy(),
         new OverrideStrategy(),
+        new Auto3Strategy(),
         new ClassifierStrategy(),
         new DefaultStrategy(),
       ],
@@ -77,11 +82,12 @@ describe('ModelRouterService', () => {
     const compositeStrategyArgs = vi.mocked(CompositeStrategy).mock.calls[0];
     const childStrategies = compositeStrategyArgs[0];
 
-    expect(childStrategies.length).toBe(4);
+    expect(childStrategies.length).toBe(5);
     expect(childStrategies[0]).toBeInstanceOf(FallbackStrategy);
     expect(childStrategies[1]).toBeInstanceOf(OverrideStrategy);
-    expect(childStrategies[2]).toBeInstanceOf(ClassifierStrategy);
-    expect(childStrategies[3]).toBeInstanceOf(DefaultStrategy);
+    expect(childStrategies[2]).toBeInstanceOf(Auto3Strategy);
+    expect(childStrategies[3]).toBeInstanceOf(ClassifierStrategy);
+    expect(childStrategies[4]).toBeInstanceOf(DefaultStrategy);
     expect(compositeStrategyArgs[1]).toBe('agent-router');
   });
 
@@ -163,6 +169,19 @@ describe('ModelRouterService', () => {
       const decision = await service.route(mockContext);
 
       expect(decision.model).toBe(PREVIEW_GEMINI_MODEL);
+    });
+
+    it('should upgrade to Preview Flash Model when preview features are enabled and model is 2.5 Flash', async () => {
+      vi.spyOn(mockCompositeStrategy, 'route').mockResolvedValue({
+        model: DEFAULT_GEMINI_FLASH_MODEL,
+        metadata: { source: 'test', latencyMs: 0, reasoning: 'test' },
+      });
+      vi.spyOn(mockConfig, 'getPreviewFeatures').mockReturnValue(true);
+      vi.spyOn(mockConfig, 'isPreviewModelFallbackMode').mockReturnValue(false);
+
+      const decision = await service.route(mockContext);
+
+      expect(decision.model).toBe(PREVIEW_GEMINI_FLASH_MODEL);
     });
 
     it('should NOT upgrade to Preview Model when preview features are disabled', async () => {

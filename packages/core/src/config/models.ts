@@ -5,16 +5,19 @@
  */
 
 export const PREVIEW_GEMINI_MODEL = 'gemini-3-pro-preview';
+export const PREVIEW_GEMINI_FLASH_MODEL = 'gemini-3-flash-preview';
 export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-pro';
 export const DEFAULT_GEMINI_FLASH_MODEL = 'gemini-2.5-flash';
 export const DEFAULT_GEMINI_FLASH_LITE_MODEL = 'gemini-2.5-flash-lite';
 
 export const DEFAULT_GEMINI_MODEL_AUTO = 'auto';
+export const DEFAULT_GEMINI_MODEL_AUTO_3 = 'auto-3';
 
 // Model aliases for user convenience.
 export const GEMINI_MODEL_ALIAS_PRO = 'pro';
 export const GEMINI_MODEL_ALIAS_FLASH = 'flash';
 export const GEMINI_MODEL_ALIAS_FLASH_LITE = 'flash-lite';
+export const GEMINI_MODEL_ALIAS_AUTO_3 = 'auto-3';
 
 export const DEFAULT_GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001';
 
@@ -41,10 +44,15 @@ export function resolveModel(
         : DEFAULT_GEMINI_MODEL;
     }
     case GEMINI_MODEL_ALIAS_FLASH: {
-      return DEFAULT_GEMINI_FLASH_MODEL;
+      return previewFeaturesEnabled
+        ? PREVIEW_GEMINI_FLASH_MODEL
+        : DEFAULT_GEMINI_FLASH_MODEL;
     }
     case GEMINI_MODEL_ALIAS_FLASH_LITE: {
       return DEFAULT_GEMINI_FLASH_LITE_MODEL;
+    }
+    case DEFAULT_GEMINI_MODEL_AUTO_3: {
+      return PREVIEW_GEMINI_MODEL;
     }
     default: {
       return requestedModel;
@@ -85,6 +93,10 @@ export function getEffectiveModel(
   }
 
   // Default fallback for Gemini CLI.
+  if (requestedModel === DEFAULT_GEMINI_MODEL_AUTO_3) {
+    return PREVIEW_GEMINI_FLASH_MODEL;
+  }
+
   return DEFAULT_GEMINI_FLASH_MODEL;
 }
 

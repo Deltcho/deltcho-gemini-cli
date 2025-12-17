@@ -10,6 +10,7 @@ import {
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL,
   PREVIEW_GEMINI_MODEL,
+  PREVIEW_GEMINI_FLASH_MODEL,
 } from '../config/models.js';
 import { logFlashFallback, FlashFallbackEvent } from '../telemetry/index.js';
 import { coreEvents } from '../utils/events.js';
@@ -29,22 +30,27 @@ export async function handleFallback(
   // Applicability Checks
   if (authType !== AuthType.LOGIN_WITH_GOOGLE) return null;
 
-  // Guardrail: If it's a ModelNotFoundError but NOT the preview model, do not handle it.
+  // Guardrail: If it's a ModelNotFoundError but NOT a preview model, do not handle it.
   if (
     error instanceof ModelNotFoundError &&
-    failedModel !== PREVIEW_GEMINI_MODEL
+    failedModel !== PREVIEW_GEMINI_MODEL &&
+    failedModel !== PREVIEW_GEMINI_FLASH_MODEL
   ) {
     return null;
   }
 
   // Preview Model Specific Logic
-  if (failedModel === PREVIEW_GEMINI_MODEL) {
+  const isPreviewModel =
+    failedModel === PREVIEW_GEMINI_MODEL ||
+    failedModel === PREVIEW_GEMINI_FLASH_MODEL;
+
+  if (isPreviewModel) {
     // Always set bypass mode for the immediate retry.
-    // This ensures the next attempt uses 2.5 Pro.
+    // This ensures the next attempt uses the corresponding 2.5 model.
     config.setPreviewModelBypassMode(true);
 
     // If we are already in Preview Model fallback mode (user previously said "Always"),
-    // we silently retry (which will use 2.5 Pro due to bypass mode).
+    // we silently retry (which will use the corresponding 2.5 model due to bypass mode).
     if (config.isPreviewModelFallbackMode()) {
       return true;
     }
